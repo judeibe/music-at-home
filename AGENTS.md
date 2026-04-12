@@ -11,3 +11,4 @@ When a task matches one of the project skills below, explicitly invoke that skil
 - `context7-mcp` for third-party library/framework/API documentation and examples.
 - `shadcn` for shadcn/ui component discovery, composition, and UI implementation workflows.
 - `frontend-design` for page/component UI design and visual polish work.
+- `vercel-react-best-practices` for React/Next.js performance optimization and implementation best practices.
