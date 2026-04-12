@@ -66,7 +66,7 @@ export default function SearchPage() {
         </div>
       ) : totalResults === 0 ? (
         <div className="rounded-2xl border border-dashed border-foreground/20 p-4 text-sm text-foreground/70">
-          No matches found for “{trimmedQuery}”.
+          No matches found for &ldquo;{trimmedQuery}&rdquo;.
         </div>
       ) : (
         <div className="flex flex-col gap-3">
