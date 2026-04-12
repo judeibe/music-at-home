@@ -66,7 +66,10 @@ export type MusicAssistantPlayerFeature =
   | "power"
   | "volume_set"
   | "volume_mute"
+  | "sync"
   | (string & {});
+
+export type MusicAssistantPlayerType = "player" | "group" | "sync_group" | (string & {});
 
 export type MusicAssistantPlayerMedia = {
   title?: string | null;
@@ -79,7 +82,14 @@ export type MusicAssistantPlayer = {
   provider: string;
   name: string;
   available: boolean;
+  type?: MusicAssistantPlayerType;
   playback_state?: MusicAssistantPlaybackState;
   supported_features?: MusicAssistantPlayerFeature[];
   current_media?: MusicAssistantPlayerMedia | null;
+  /** Volume level 0–100, if supported */
+  volume_level?: number | null;
+  /** Whether the player is muted, if supported */
+  volume_muted?: boolean | null;
+  /** IDs of child players in a sync group (present when this player is the group leader) */
+  group_childs?: string[] | null;
 };

@@ -1,10 +1,5 @@
-import { RouteSkeleton } from "../_components/route-skeleton";
+import { RoomsList } from "./_components/rooms-list";
 
 export default function RoomsPage() {
-  return (
-    <RouteSkeleton
-      title="Rooms"
-      description="Multi-room grouping and handoff foundation for synchronized playback across spaces."
-    />
-  );
+  return <RoomsList />;
 }
