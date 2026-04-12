@@ -1,10 +1,5 @@
-import { RouteSkeleton } from "../_components/route-skeleton";
+import { FavoritesList } from "./_components/favorites-list";
 
 export default function FavoritesPage() {
-  return (
-    <RouteSkeleton
-      title="Favorites"
-      description="Favorites route shell for users' saved tracks, albums, playlists, and quick actions."
-    />
-  );
+  return <FavoritesList />;
 }

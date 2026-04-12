@@ -1,6 +1,11 @@
 "use client";
 
-import { useDeferredValue, useMemo, useState } from "react";
+import { useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
+
+import {
+  executeMusicAssistantCommand,
+  MusicAssistantCommandError,
+} from "@/lib/music-assistant/browser";
 import {
   libraryItems,
   matchesLibraryQuery,
@@ -20,6 +25,57 @@ export default function LibraryPage() {
   const [activeTab, setActiveTab] = useState<"all" | LibraryItemType>("all");
   const deferredQuery = useDeferredValue(query);
   const isStale = deferredQuery !== query;
+
+  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
+  const [pendingFavoriteId, setPendingFavoriteId] = useState<string | null>(null);
+  const [favoriteErrorMessage, setFavoriteErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    void (async () => {
+      try {
+        const result = await executeMusicAssistantCommand<string[]>({
+          command: "favorites/list",
+          args: {},
+        });
+        setFavoriteIds(Array.isArray(result) ? result : []);
+      } catch {
+        // Favorites load failure is non-blocking; toggle actions will still surface errors.
+      }
+    })();
+  }, []);
+
+  const toggleFavorite = useCallback(
+    async (itemId: string) => {
+      setPendingFavoriteId(itemId);
+      setFavoriteErrorMessage(null);
+      const isFavorited = favoriteIds.includes(itemId);
+
+      try {
+        if (isFavorited) {
+          await executeMusicAssistantCommand({
+            command: "favorites/remove",
+            args: { item_id: itemId },
+          });
+          setFavoriteIds((prev) => prev.filter((id) => id !== itemId));
+        } else {
+          await executeMusicAssistantCommand({
+            command: "favorites/add",
+            args: { item_id: itemId },
+          });
+          setFavoriteIds((prev) => [...prev, itemId]);
+        }
+      } catch (error) {
+        if (error instanceof MusicAssistantCommandError) {
+          setFavoriteErrorMessage(error.message);
+        } else {
+          setFavoriteErrorMessage("Unexpected error while updating favorites.");
+        }
+      } finally {
+        setPendingFavoriteId(null);
+      }
+    },
+    [favoriteIds],
+  );
 
   const filteredItems = useMemo(() => {
     return libraryItems.filter((item) => {
@@ -72,6 +128,15 @@ export default function LibraryPage() {
         </div>
       </div>
 
+      {favoriteErrorMessage ? (
+        <div
+          className="rounded-2xl border border-foreground/20 bg-foreground/[0.04] p-3"
+          role="alert"
+        >
+          <p className="text-sm text-foreground/80">{favoriteErrorMessage}</p>
+        </div>
+      ) : null}
+
       <div className="flex items-center justify-between text-xs uppercase tracking-[0.12em] text-foreground/60">
         <p>{filteredItems.length} results</p>
         <p>{isStale ? "Updating…" : "Up to date"}</p>
@@ -83,21 +148,37 @@ export default function LibraryPage() {
         </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
-          {filteredItems.map((item) => (
-            <article
-              key={item.id}
-              className="flex flex-col gap-2 rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-4"
-            >
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-sm font-medium">{item.title}</p>
-                <span className="rounded-full border border-foreground/15 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-foreground/60">
-                  {item.type}
-                </span>
-              </div>
-              <p className="text-sm text-foreground/70">{item.subtitle}</p>
-              <p className="text-xs uppercase tracking-[0.12em] text-foreground/60">{item.source}</p>
-            </article>
-          ))}
+          {filteredItems.map((item) => {
+            const isFavorited = favoriteIds.includes(item.id);
+            const isPending = pendingFavoriteId === item.id;
+            return (
+              <article
+                key={item.id}
+                className="flex flex-col gap-2 rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-4"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm font-medium truncate">{item.title}</p>
+                  <span className="shrink-0 rounded-full border border-foreground/15 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-foreground/60">
+                    {item.type}
+                  </span>
+                </div>
+                <p className="text-sm text-foreground/70">{item.subtitle}</p>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs uppercase tracking-[0.12em] text-foreground/60">{item.source}</p>
+                  <button
+                    type="button"
+                    aria-label={isFavorited ? `Remove ${item.title} from favorites` : `Add ${item.title} to favorites`}
+                    aria-pressed={isFavorited}
+                    className="rounded-lg border border-foreground/15 px-3 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
+                    disabled={pendingFavoriteId !== null}
+                    onClick={() => void toggleFavorite(item.id)}
+                  >
+                    {isPending ? (isFavorited ? "Removing…" : "Adding…") : (isFavorited ? "♥ Saved" : "♡ Save")}
+                  </button>
+                </div>
+              </article>
+            );
+          })}
         </div>
       )}
     </section>
