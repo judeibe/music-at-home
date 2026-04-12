@@ -24,7 +24,9 @@ export default function AppLayout({
         </aside>
         <main className="flex flex-col gap-3">
           <section className="rounded-3xl border border-foreground/10 bg-background px-4 py-3">
-            <p className="text-xs uppercase tracking-[0.16em] text-foreground/60">Now Playing</p>
+            <h2 className="text-xs uppercase tracking-[0.16em] text-foreground/60">
+              Now Playing
+            </h2>
             <p className="text-sm font-medium">No track selected</p>
           </section>
           {children}
