@@ -9,7 +9,10 @@ export function AppNav() {
 
   return (
     <>
-      <nav aria-label="Primary navigation" className="hidden flex-col gap-2 md:flex">
+      <nav
+        aria-label="Primary navigation desktop"
+        className="hidden flex-col gap-2 md:flex"
+      >
         {appNavItems.map((item) => {
           const isActive = pathname === item.href;
           return (
@@ -30,7 +33,7 @@ export function AppNav() {
         })}
       </nav>
       <nav
-        aria-label="Primary navigation"
+        aria-label="Primary navigation mobile"
         className="fixed inset-x-0 bottom-0 border-t border-foreground/10 bg-background/95 px-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] pt-2 backdrop-blur md:hidden"
       >
         <div className="mx-auto flex max-w-3xl items-center gap-1 overflow-x-auto">
