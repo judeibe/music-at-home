@@ -1,5 +1,4 @@
-import Link from "next/link";
-import { appNavItems } from "./_lib/navigation";
+import { AppNav } from "./_components/app-nav";
 
 export default function AppLayout({
   children,
@@ -14,17 +13,7 @@ export default function AppLayout({
       </header>
       <div className="grid flex-1 gap-6 lg:grid-cols-[260px_1fr]">
         <aside className="rounded-xl border border-black/10 bg-background p-3 dark:border-white/15">
-          <nav aria-label="Primary" className="flex flex-col gap-2">
-            {appNavItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-black/5 dark:hover:bg-white/10"
-              >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
+          <AppNav />
         </aside>
         <main>{children}</main>
       </div>
