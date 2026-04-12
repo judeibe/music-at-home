@@ -1,10 +1,5 @@
-import { RouteSkeleton } from "../_components/route-skeleton";
+import { DevicesList } from "./_components/devices-list";
 
 export default function DevicesPage() {
-  return (
-    <RouteSkeleton
-      title="Devices"
-      description="Device management skeleton for discovery, pairing, status, and output assignments."
-    />
-  );
+  return <DevicesList />;
 }
