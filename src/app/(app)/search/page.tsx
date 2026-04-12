@@ -22,12 +22,12 @@ export default function SearchPage() {
 
   const groups = useMemo(() => {
     const filtered = libraryItems.filter((item) => matchesLibraryQuery(item, deferredQuery));
-    const byType = searchOrder
+    const byType: SearchGroup[] = searchOrder
       .map((type) => ({
         type,
         items: filtered.filter((item) => item.type === type),
       }))
-      .filter((group) => group.items.length > 0) satisfies SearchGroup[];
+      .filter((group) => group.items.length > 0);
     return byType;
   }, [deferredQuery]);
 
@@ -51,7 +51,7 @@ export default function SearchPage() {
           type="search"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="Try “dance”, “lorde”, or “playlist”"
+          placeholder="Try 'dance', 'Lorde', or 'playlist'"
           className="w-full rounded-xl border border-foreground/15 bg-background px-3 py-2 text-sm outline-none transition focus:border-foreground/30"
         />
         <div className="flex items-center justify-between text-xs uppercase tracking-[0.12em] text-foreground/60">
