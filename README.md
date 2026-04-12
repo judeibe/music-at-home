@@ -35,6 +35,22 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
+## Testing
+
+The project uses [Vitest](https://vitest.dev/) with [Testing Library](https://testing-library.com/).
+
+```bash
+# Run the full test suite
+pnpm test
+
+# Run a single test file
+pnpm test:file <path-to-test-file>
+# e.g. pnpm test:file src/lib/music-assistant/__tests__/errors.test.ts
+
+# Run tests in watch mode
+pnpm test:watch
+```
+
 ## Music Assistant API integration
 
 Server-side route handlers provide a typed auth/session flow for Music Assistant:
