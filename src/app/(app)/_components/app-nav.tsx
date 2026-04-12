@@ -28,14 +28,10 @@ export function AppNav() {
         })}
       </nav>
       <nav
-        role="navigation"
         aria-label="Primary mobile"
         className="fixed inset-x-0 bottom-0 border-t border-foreground/10 bg-background/95 px-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] pt-2 backdrop-blur md:hidden"
       >
-        <div
-          tabIndex={0}
-          className="mx-auto flex max-w-3xl items-center gap-1 overflow-x-auto"
-        >
+        <div className="mx-auto flex max-w-3xl items-center gap-1 overflow-x-auto">
           {appNavItems.map((item) => {
             const isActive = pathname === item.href;
             return (
