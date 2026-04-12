@@ -34,3 +34,14 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Music Assistant API integration
+
+Server-side route handlers provide a typed auth/session flow for Music Assistant:
+
+- `POST /api/music-assistant/auth/login` – logs in with `{ username, password, providerId? }` (defaults to `builtin`) and stores an HttpOnly session cookie.
+- `POST /api/music-assistant/auth/logout` – clears the session cookie.
+- `POST /api/music-assistant/command` – executes authenticated commands with `{ command, args? }`.
+
+Set `MUSIC_ASSISTANT_BASE_URL` to your Music Assistant instance URL.  
+If unset, `http://localhost:8095` is used.
