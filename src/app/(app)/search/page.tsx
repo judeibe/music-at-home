@@ -21,7 +21,8 @@ export default function SearchPage() {
   const isStale = deferredQuery !== query;
 
   const groups = useMemo(() => {
-    const filtered = libraryItems.filter((item) => matchesLibraryQuery(item, deferredQuery));
+    if (trimmedQuery.length === 0) return [];
+    const filtered = libraryItems.filter((item) => matchesLibraryQuery(item, trimmedQuery));
     const byType: SearchGroup[] = searchOrder
       .map((type) => ({
         type,
@@ -29,7 +30,7 @@ export default function SearchPage() {
       }))
       .filter((group) => group.items.length > 0);
     return byType;
-  }, [deferredQuery]);
+  }, [trimmedQuery]);
 
   const totalResults = groups.reduce((count, group) => count + group.items.length, 0);
 
