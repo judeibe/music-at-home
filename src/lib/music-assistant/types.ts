@@ -52,3 +52,34 @@ export type MusicAssistantServerInfo = {
   onboard_done: boolean;
   homeassistant_addon: boolean;
 };
+
+export type MusicAssistantPlaybackState =
+  | "idle"
+  | "playing"
+  | "paused"
+  | "buffering"
+  | (string & {});
+
+export type MusicAssistantPlayerFeature =
+  | "pause"
+  | "next_previous"
+  | "power"
+  | "volume_set"
+  | "volume_mute"
+  | (string & {});
+
+export type MusicAssistantPlayerMedia = {
+  title?: string | null;
+  artist?: string | null;
+  album?: string | null;
+};
+
+export type MusicAssistantPlayer = {
+  player_id: string;
+  provider: string;
+  name: string;
+  available: boolean;
+  playback_state?: MusicAssistantPlaybackState;
+  supported_features?: MusicAssistantPlayerFeature[];
+  current_media?: MusicAssistantPlayerMedia | null;
+};
