@@ -11,7 +11,10 @@ export default function AppLayout({
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col bg-background px-4 pb-28 pt-4 md:px-6 md:pb-8">
       <header className="mb-4 flex flex-col gap-1">
-        <p className="text-xs font-medium uppercase tracking-[0.18em] text-foreground/60">
+        <p
+          aria-hidden="true"
+          className="text-xs font-medium uppercase tracking-[0.18em] text-foreground/60"
+        >
           {APP_SLUG}
         </p>
         <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">

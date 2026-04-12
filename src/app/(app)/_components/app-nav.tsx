@@ -9,7 +9,7 @@ export function AppNav() {
 
   return (
     <>
-      <nav aria-label="Primary" className="hidden flex-col gap-2 md:flex">
+      <nav aria-label="Primary navigation" className="hidden flex-col gap-2 md:flex">
         {appNavItems.map((item) => {
           const isActive = pathname === item.href;
           return (
@@ -21,14 +21,16 @@ export function AppNav() {
                 isActive ? "bg-foreground/10" : "hover:bg-foreground/5"
               }`}
             >
-              <span className="text-base leading-none">{item.symbol}</span>
+              <span aria-hidden="true" className="text-base leading-none">
+                {item.symbol}
+              </span>
               <span>{item.label}</span>
             </Link>
           );
         })}
       </nav>
       <nav
-        aria-label="Primary mobile"
+        aria-label="Primary navigation"
         className="fixed inset-x-0 bottom-0 border-t border-foreground/10 bg-background/95 px-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] pt-2 backdrop-blur md:hidden"
       >
         <div className="mx-auto flex max-w-3xl items-center gap-1 overflow-x-auto">
@@ -43,7 +45,9 @@ export function AppNav() {
                   isActive ? "bg-foreground/10 font-semibold" : "text-foreground/70"
                 }`}
               >
-                <span className="text-base leading-none">{item.symbol}</span>
+                <span aria-hidden="true" className="text-base leading-none">
+                  {item.symbol}
+                </span>
                 <span className="truncate">{item.label}</span>
               </Link>
             );
