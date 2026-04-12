@@ -41,7 +41,7 @@ function mapHttpStatusToCode(status: number): MusicAssistantApiErrorCode {
   }
 }
 
-function pickMessage(status: number, details: unknown): string {
+function extractErrorMessage(status: number, details: unknown): string {
   if (details && typeof details === "object") {
     const payload = details as Record<string, unknown>;
     const candidates = [payload.message, payload.error, payload.detail];
@@ -73,7 +73,7 @@ export function createMusicAssistantApiError(params: {
   return new MusicAssistantApiError({
     status: params.status,
     code: mapHttpStatusToCode(params.status),
-    message: pickMessage(params.status, params.details),
+    message: extractErrorMessage(params.status, params.details),
     details: params.details,
   });
 }

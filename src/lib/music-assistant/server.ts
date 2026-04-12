@@ -9,18 +9,18 @@ import {
 } from "@/lib/music-assistant/session";
 import type { MusicAssistantCommandRequest } from "@/lib/music-assistant/types";
 
-const DEFAULT_BASE_URL = "http://192.168.86.203:8095";
+const DEFAULT_BASE_URL = "http://localhost:8095";
 
-let sharedClient: MusicAssistantApiClient | null = null;
+let cachedClient: MusicAssistantApiClient | null = null;
 
 export function getMusicAssistantClient(): MusicAssistantApiClient {
-  if (sharedClient) {
-    return sharedClient;
+  if (cachedClient) {
+    return cachedClient;
   }
 
   const baseUrl = process.env.MUSIC_ASSISTANT_BASE_URL ?? DEFAULT_BASE_URL;
-  sharedClient = new MusicAssistantApiClient({ baseUrl });
-  return sharedClient;
+  cachedClient = new MusicAssistantApiClient({ baseUrl });
+  return cachedClient;
 }
 
 export async function loginMusicAssistantSession(params: {
@@ -37,8 +37,16 @@ export async function executeAuthenticatedMusicAssistantCommand<TResult = unknow
   request: MusicAssistantCommandRequest,
 ): Promise<TResult> {
   const token = await getMusicAssistantSessionToken();
+  if (!token) {
+    throw new MusicAssistantApiError({
+      code: "UNAUTHORIZED",
+      message: "Music Assistant session token is missing.",
+      status: 401,
+    });
+  }
+
   const response = await getMusicAssistantClient().executeCommand<TResult>(request, {
-    token: token ?? undefined,
+    token,
   });
   return response;
 }

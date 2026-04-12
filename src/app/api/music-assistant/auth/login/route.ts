@@ -4,8 +4,8 @@ import { MusicAssistantApiError } from "@/lib/music-assistant/errors";
 import { loginMusicAssistantSession, withMusicAssistantAuth } from "@/lib/music-assistant/server";
 
 type LoginPayload = {
-  username?: string;
-  password?: string;
+  username: string;
+  password: string;
   providerId?: string;
 };
 
@@ -19,7 +19,21 @@ function isValidLoginPayload(value: unknown): value is LoginPayload {
 }
 
 export async function POST(request: Request) {
-  const body = (await request.json().catch(() => null)) as unknown;
+  let body: unknown;
+  try {
+    body = (await request.json()) as unknown;
+  } catch {
+    return NextResponse.json(
+      {
+        error: {
+          code: "BAD_REQUEST",
+          message: "Invalid JSON in request body.",
+        },
+      },
+      { status: 400 },
+    );
+  }
+
   if (!isValidLoginPayload(body)) {
     return NextResponse.json(
       {
@@ -31,13 +45,14 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   }
+  const payload = body;
 
   try {
     const user = await withMusicAssistantAuth(() =>
       loginMusicAssistantSession({
-        username: body.username!,
-        password: body.password!,
-        providerId: body.providerId,
+        username: payload.username,
+        password: payload.password,
+        providerId: payload.providerId,
       }),
     );
 

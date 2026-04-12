@@ -17,7 +17,10 @@ function isCommandRequest(value: unknown): value is MusicAssistantCommandRequest
     return false;
   }
 
-  if (payload.args !== undefined && (payload.args === null || Array.isArray(payload.args))) {
+  if (
+    payload.args !== undefined &&
+    (typeof payload.args !== "object" || payload.args === null || Array.isArray(payload.args))
+  ) {
     return false;
   }
 
@@ -25,7 +28,21 @@ function isCommandRequest(value: unknown): value is MusicAssistantCommandRequest
 }
 
 export async function POST(request: Request) {
-  const body = (await request.json().catch(() => null)) as unknown;
+  let body: unknown;
+  try {
+    body = (await request.json()) as unknown;
+  } catch {
+    return NextResponse.json(
+      {
+        error: {
+          code: "BAD_REQUEST",
+          message: "Invalid JSON in request body.",
+        },
+      },
+      { status: 400 },
+    );
+  }
+
   if (!isCommandRequest(body)) {
     return NextResponse.json(
       {

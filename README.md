@@ -39,9 +39,9 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 Server-side route handlers provide a typed auth/session flow for Music Assistant:
 
-- `POST /api/music-assistant/auth/login` – logs in with `{ username, password, providerId? }` and stores an HttpOnly session cookie.
+- `POST /api/music-assistant/auth/login` – logs in with `{ username, password, providerId? }` (defaults to `builtin`) and stores an HttpOnly session cookie.
 - `POST /api/music-assistant/auth/logout` – clears the session cookie.
 - `POST /api/music-assistant/command` – executes authenticated commands with `{ command, args? }`.
 
 Set `MUSIC_ASSISTANT_BASE_URL` to your Music Assistant instance URL.  
-If unset, the API spec default (`http://192.168.86.203:8095`) is used.
+If unset, `http://localhost:8095` is used.

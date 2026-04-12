@@ -4,7 +4,12 @@ import { cookies } from "next/headers";
 
 export const MUSIC_ASSISTANT_SESSION_COOKIE = "music_assistant_session";
 
-const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7;
+const SECONDS_PER_MINUTE = 60;
+const MINUTES_PER_HOUR = 60;
+const HOURS_PER_DAY = 24;
+const DAYS_PER_SESSION = 7;
+const SESSION_MAX_AGE_SECONDS =
+  SECONDS_PER_MINUTE * MINUTES_PER_HOUR * HOURS_PER_DAY * DAYS_PER_SESSION;
 
 export async function setMusicAssistantSession(token: string): Promise<void> {
   const cookieStore = await cookies();
