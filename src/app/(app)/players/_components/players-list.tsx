@@ -17,7 +17,7 @@ type ActiveCommand = {
 
 function formatPlaybackState(state: string | undefined): string {
   if (!state) {
-    return "idle";
+    return "unknown";
   }
   return state.replace(/_/g, " ");
 }
@@ -85,10 +85,14 @@ export function PlayersList() {
     [loadPlayers],
   );
 
-  const renderBody = () => {
+  const renderPlayersContent = () => {
     if (isLoading) {
       return (
-        <div className="rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-4">
+        <div
+          className="rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-4"
+          role="status"
+          aria-live="polite"
+        >
           <p className="text-sm text-foreground/70">Loading players…</p>
         </div>
       );
@@ -129,16 +133,18 @@ export function PlayersList() {
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
+                  aria-label="Previous track"
                   className="rounded-lg border border-foreground/15 px-3 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-50"
                   disabled={!player.available || isBusy || !supportsNextPrevious}
                   onClick={() => void runTransportCommand(player.player_id, "previous")}
                 >
-                  Prev
+                  Previous
                 </button>
                 <button
                   type="button"
+                  aria-label={isPlaying ? "Pause playback" : "Play playback"}
                   className="rounded-lg border border-foreground/15 px-3 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-50"
-                  disabled={!player.available || isBusy || (isPlaying && !supportsPause)}
+                  disabled={!player.available || isBusy || !supportsPause}
                   onClick={() =>
                     void runTransportCommand(player.player_id, isPlaying ? "pause" : "play")
                   }
@@ -147,6 +153,7 @@ export function PlayersList() {
                 </button>
                 <button
                   type="button"
+                  aria-label="Next track"
                   className="rounded-lg border border-foreground/15 px-3 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-50"
                   disabled={!player.available || isBusy || !supportsNextPrevious}
                   onClick={() => void runTransportCommand(player.player_id, "next")}
@@ -190,12 +197,15 @@ export function PlayersList() {
       </header>
 
       {errorMessage ? (
-        <div className="rounded-2xl border border-foreground/20 bg-foreground/[0.04] p-3">
+        <div
+          className="rounded-2xl border border-foreground/20 bg-foreground/[0.04] p-3"
+          role="alert"
+        >
           <p className="text-sm text-foreground/80">{errorMessage}</p>
         </div>
       ) : null}
 
-      {renderBody()}
+      {renderPlayersContent()}
     </section>
   );
 }

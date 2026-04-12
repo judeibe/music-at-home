@@ -77,9 +77,7 @@ export async function executeMusicAssistantCommand<TResult = unknown>(
     | null;
 
   if (!response.ok) {
-    const errorPayload = readErrorPayload(
-      payload as CommandSuccessResponse<unknown> | CommandErrorResponse | null,
-    );
+    const errorPayload = readErrorPayload(payload);
     throw new MusicAssistantCommandError({
       code: errorPayload?.code ?? "COMMAND_FAILED",
       message: errorPayload?.message ?? "Music Assistant command failed.",
