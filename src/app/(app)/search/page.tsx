@@ -132,7 +132,7 @@ export default function SearchPage() {
   }, [hasMore, isLoading, trimmedQuery.length]);
 
   return (
-    <section className="flex flex-col gap-4 rounded-3xl border border-foreground/10 bg-background p-5">
+    <section className="flex flex-col gap-5 rounded-3xl border border-foreground/10 bg-background p-5 md:gap-6">
       <header className="flex flex-col gap-2">
         <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Search</h1>
         <p className="text-sm leading-6 text-foreground/70">
@@ -152,9 +152,10 @@ export default function SearchPage() {
           placeholder="Try 'dance', 'Lorde', or 'playlist'"
           className="w-full rounded-xl border border-foreground/15 bg-background px-3 py-2 text-sm outline-none transition focus:border-foreground/30"
         />
-        <div className="flex items-center justify-between text-xs uppercase tracking-[0.12em] text-foreground/60">
+
+        <div className="grid gap-2 rounded-xl border border-foreground/10 bg-background/70 px-3 py-2 text-xs uppercase tracking-[0.12em] text-foreground/60 sm:grid-cols-2">
           <p>{trimmedQuery.length === 0 ? "Ready" : `${totalResults} results`}</p>
-          <p>{isStale || isLoading ? "Searching…" : "Synced"}</p>
+          <p className="sm:text-right">{isStale || isLoading ? "Searching…" : "Synced"}</p>
         </div>
       </div>
 
@@ -175,16 +176,27 @@ export default function SearchPage() {
       ) : (
         <div className="flex flex-col gap-3">
           {groups.map((group) => (
-            <section key={group.type} className="flex flex-col gap-2 rounded-2xl border border-foreground/10 p-3">
-              <h2 className="text-xs uppercase tracking-[0.14em] text-foreground/60">
-                {group.type} · {group.items.length}
-              </h2>
-              <div className="grid gap-2 sm:grid-cols-2">
+            <section
+              key={group.type}
+              className="flex flex-col gap-3 rounded-2xl border border-foreground/10 bg-foreground/[0.02] p-3"
+            >
+              <div className="flex items-center justify-between gap-2 border-b border-foreground/10 pb-2">
+                <h2 className="text-xs uppercase tracking-[0.14em] text-foreground/60">{group.type}</h2>
+                <span className="rounded-full border border-foreground/15 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-foreground/60">
+                  {group.items.length}
+                </span>
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
                 {group.items.map((item) => (
-                  <article key={item.id} className="rounded-xl border border-foreground/10 bg-foreground/[0.03] p-3">
-                    <p className="text-sm font-medium">{item.title}</p>
-                    <p className="mt-1 text-sm text-foreground/70">{item.subtitle}</p>
-                    <p className="mt-2 text-xs uppercase tracking-[0.12em] text-foreground/60">{item.source}</p>
+                  <article
+                    key={item.id}
+                    className="flex flex-col gap-2 rounded-xl border border-foreground/10 bg-background p-3"
+                  >
+                    <p className="truncate text-sm font-semibold">{item.title}</p>
+                    <p className="text-sm text-foreground/70">{item.subtitle}</p>
+                    <p className="mt-auto truncate text-xs uppercase tracking-[0.12em] text-foreground/60">
+                      {item.source}
+                    </p>
                   </article>
                 ))}
               </div>

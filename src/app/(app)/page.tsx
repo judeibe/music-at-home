@@ -151,34 +151,46 @@ export default async function HomePage() {
     hasDataError: dataErrorMessage !== null,
     hasSystemError: systemErrorMessage !== null,
   });
+  const statusChipClass =
+    systemStatusLabel === "Healthy"
+      ? "border-accent/35 bg-accent/10 text-accent-strong"
+      : "border-border-subtle bg-surface-2 text-foreground/80";
 
   return (
-    <section className="flex flex-col gap-5 rounded-3xl border border-foreground/10 bg-background p-5">
-      <header className="flex flex-col gap-2">
-        <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Home dashboard</h1>
-        <p className="text-sm leading-6 text-foreground/70">
-          Monitor active playback, jump to control surfaces, and check system readiness.
+    <section className="flex flex-col gap-5 rounded-3xl border border-border-subtle bg-background p-5 shadow-elevation-1">
+      <header className="rounded-2xl border border-border-subtle bg-surface-1 p-4 shadow-elevation-1">
+        <p className="text-xs font-medium uppercase tracking-[0.16em] text-foreground/60">
+          Home surface
+        </p>
+        <h1 className="mt-1 text-2xl font-semibold tracking-tight md:text-3xl">Home dashboard</h1>
+        <p className="mt-2 max-w-3xl text-sm leading-6 text-foreground/75">
+          Monitor active playback, jump to control surfaces, and keep your listening system in a
+          ready state.
         </p>
       </header>
 
       <div className="grid gap-3 md:grid-cols-3">
-        <article className="rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-4">
+        <article className="rounded-2xl border border-border-subtle bg-surface-1 p-4 shadow-elevation-1">
           <p className="text-xs uppercase tracking-[0.14em] text-foreground/60">System status</p>
-          <p className="mt-2 text-sm font-medium">{systemStatusLabel}</p>
-          <p className="mt-1 text-xs text-foreground/70">
+          <p
+            className={`mt-2 inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em] ${statusChipClass}`}
+          >
+            {systemStatusLabel}
+          </p>
+          <p className="mt-2 text-xs text-foreground/70">
             Session: {isAuthenticated ? "Signed in" : "Signed out"}
           </p>
         </article>
-        <article className="rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-4">
+        <article className="rounded-2xl border border-border-subtle bg-surface-1 p-4 shadow-elevation-1">
           <p className="text-xs uppercase tracking-[0.14em] text-foreground/60">Players online</p>
-          <p className="mt-2 text-sm font-medium">{onlinePlayers}</p>
+          <p className="mt-2 text-2xl font-semibold tracking-tight">{onlinePlayers}</p>
           <p className="mt-1 text-xs text-foreground/70">
             {players.length} total players, {queues.length} queues tracked
           </p>
         </article>
-        <article className="rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-4">
+        <article className="rounded-2xl border border-border-subtle bg-surface-1 p-4 shadow-elevation-1">
           <p className="text-xs uppercase tracking-[0.14em] text-foreground/60">Server version</p>
-          <p className="mt-2 text-sm font-medium">{serverInfo?.server_version ?? "Unavailable"}</p>
+          <p className="mt-2 text-sm font-semibold">{serverInfo?.server_version ?? "Unavailable"}</p>
           <p className="mt-1 text-xs text-foreground/70">
             Schema {serverInfo?.schema_version ?? "unknown"}
           </p>
@@ -186,18 +198,18 @@ export default async function HomePage() {
       </div>
 
       {dataErrorMessage ? (
-        <p role="alert" className="rounded-xl border border-foreground/20 bg-foreground/[0.04] p-3 text-sm">
+        <p role="alert" className="rounded-2xl border border-border-subtle bg-surface-2 p-3 text-sm">
           {dataErrorMessage}
         </p>
       ) : null}
       {systemErrorMessage ? (
-        <p role="alert" className="rounded-xl border border-foreground/20 bg-foreground/[0.04] p-3 text-sm">
+        <p role="alert" className="rounded-2xl border border-border-subtle bg-surface-2 p-3 text-sm">
           {systemErrorMessage}
         </p>
       ) : null}
 
       {!isAuthenticated ? (
-        <section className="rounded-2xl border border-dashed border-foreground/20 p-4">
+        <section className="rounded-2xl border border-dashed border-border-subtle bg-surface-1 p-4">
           <h2 className="text-sm font-semibold">Sign in to load live playback data</h2>
           <p className="mt-2 text-sm text-foreground/70">
             Authenticate on the auth route to unlock player, room, and queue telemetry on this
@@ -205,14 +217,17 @@ export default async function HomePage() {
           </p>
           <Link
             href="/auth"
-            className="mt-3 inline-flex rounded-xl border border-foreground/20 px-3 py-1.5 text-sm font-medium transition hover:bg-foreground/5"
+            className="mt-3 inline-flex rounded-full border border-border-subtle bg-background px-4 py-1.5 text-sm font-semibold transition hover:bg-surface-2"
           >
             Go to auth
           </Link>
         </section>
       ) : (
-        <div className="grid gap-4 lg:grid-cols-[1.2fr_1fr]">
-          <section aria-labelledby="recent-playback-heading" className="flex flex-col gap-3">
+        <div className="grid gap-4 lg:grid-cols-[1.25fr_1fr]">
+          <section
+            aria-labelledby="recent-playback-heading"
+            className="flex flex-col gap-3 rounded-2xl border border-border-subtle bg-surface-1 p-4 shadow-elevation-1"
+          >
             <h2 id="recent-playback-heading" className="text-sm font-semibold uppercase tracking-[0.12em]">
               Recent playback
             </h2>
@@ -221,24 +236,32 @@ export default async function HomePage() {
                 {recentPlayback.map((item) => (
                   <li
                     key={`${item.playerId}:${item.title}`}
-                    className="rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-3"
+                    className="flex items-start justify-between gap-3 rounded-xl border border-border-subtle bg-background p-3"
                   >
-                    <p className="text-sm font-medium">{item.title}</p>
-                    <p className="text-xs text-foreground/70">
-                      {item.artist ? `${item.artist} · ` : ""}
-                      {item.playerName}
-                    </p>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold">{item.title}</p>
+                      <p className="truncate text-xs text-foreground/70">
+                        {item.artist ? `${item.artist} · ` : ""}
+                        {item.playerName}
+                      </p>
+                    </div>
+                    <span className="rounded-full border border-border-subtle bg-surface-1 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-foreground/60">
+                      recent
+                    </span>
                   </li>
                 ))}
               </ol>
             ) : (
-              <p className="rounded-2xl border border-dashed border-foreground/20 p-3 text-sm text-foreground/70">
+              <p className="rounded-xl border border-dashed border-border-subtle bg-background p-3 text-sm text-foreground/70">
                 No recent playback metadata is available yet.
               </p>
             )}
           </section>
 
-          <section aria-labelledby="active-rooms-heading" className="flex flex-col gap-3">
+          <section
+            aria-labelledby="active-rooms-heading"
+            className="flex flex-col gap-3 rounded-2xl border border-border-subtle bg-surface-1 p-4 shadow-elevation-1"
+          >
             <h2 id="active-rooms-heading" className="text-sm font-semibold uppercase tracking-[0.12em]">
               Active rooms
             </h2>
@@ -248,9 +271,9 @@ export default async function HomePage() {
                 {activeRooms.map((room) => (
                   <li
                     key={room.player_id}
-                    className="rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-3"
+                    className="rounded-xl border border-border-subtle bg-background p-3"
                   >
-                    <p className="text-sm font-medium">{room.name}</p>
+                    <p className="text-sm font-semibold">{room.name}</p>
                     <p className="text-xs text-foreground/70">
                       {(room.group_childs?.length ?? 0) + 1} members ·{" "}
                       {room.playback_state ?? "unknown"}
@@ -259,7 +282,7 @@ export default async function HomePage() {
                 ))}
               </ul>
             ) : (
-              <p className="rounded-2xl border border-dashed border-foreground/20 p-3 text-sm text-foreground/70">
+              <p className="rounded-xl border border-dashed border-border-subtle bg-background p-3 text-sm text-foreground/70">
                 No synchronized rooms are active.
               </p>
             )}
@@ -276,10 +299,18 @@ export default async function HomePage() {
             <Link
               key={action.href}
               href={action.href}
-              className="flex flex-col gap-1 rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-4 transition hover:bg-foreground/[0.05]"
+              className="group flex items-center justify-between gap-3 rounded-2xl border border-border-subtle bg-surface-1 p-4 shadow-elevation-1 transition hover:bg-surface-2"
             >
-              <span className="text-sm font-semibold">{action.title}</span>
-              <span className="text-xs text-foreground/70">{action.description}</span>
+              <span className="flex min-w-0 flex-col gap-1">
+                <span className="text-sm font-semibold">{action.title}</span>
+                <span className="text-xs text-foreground/70">{action.description}</span>
+              </span>
+              <span
+                aria-hidden="true"
+                className="rounded-full border border-border-subtle bg-background px-2 py-0.5 text-xs text-foreground/60 transition group-hover:text-accent-strong"
+              >
+                →
+              </span>
             </Link>
           ))}
         </div>
