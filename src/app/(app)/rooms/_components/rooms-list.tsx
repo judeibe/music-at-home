@@ -407,17 +407,24 @@ export function RoomsList() {
   };
 
   return (
-    <section className="flex flex-col gap-4 rounded-3xl border border-foreground/10 bg-background p-5">
-      <header className="flex flex-wrap items-start justify-between gap-2">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Rooms</h1>
-          <p className="text-sm text-foreground/70">
-            Group players into synchronized rooms and control multi-room playback.
+    <div className="flex flex-col gap-6">
+      <header className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight" style={{ color: "var(--foreground)" }}>
+            Rooms
+          </h1>
+          <p className="mt-1 text-sm" style={{ color: "var(--fg-secondary)" }}>
+            Group players into synchronized rooms for multi-room playback.
           </p>
         </div>
         <button
           type="button"
-          className="rounded-lg border border-foreground/15 px-3 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+          className="shrink-0 rounded-full px-4 py-2 text-sm font-medium am-transition disabled:cursor-not-allowed disabled:opacity-50"
+          style={{
+            background: "var(--bg-surface)",
+            border: "1px solid var(--border)",
+            color: "var(--foreground)",
+          }}
           disabled={isLoading || isBusy}
           onClick={() => void handleManualRefresh()}
         >
@@ -427,14 +434,19 @@ export function RoomsList() {
 
       {errorMessage ? (
         <div
-          className="rounded-2xl border border-foreground/20 bg-foreground/[0.04] p-3"
+          className="rounded-xl px-4 py-3 text-sm"
+          style={{
+            background: "rgba(252,60,68,0.08)",
+            border: "1px solid rgba(252,60,68,0.2)",
+            color: "var(--accent)",
+          }}
           role="alert"
         >
-          <p className="text-sm text-foreground/80">{errorMessage}</p>
+          {errorMessage}
         </div>
       ) : null}
 
       {renderContent()}
-    </section>
+    </div>
   );
 }

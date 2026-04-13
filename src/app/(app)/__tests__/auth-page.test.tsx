@@ -26,9 +26,9 @@ describe("AuthPage route", () => {
 
     render(await AuthPage());
 
-    expect(screen.getByRole("heading", { name: "Music Assistant access" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Onboarding checklist" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Open home dashboard" })).toHaveAttribute("href", "/");
+    expect(screen.getByRole("heading", { name: "Account" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Getting Started" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Go to Home" })).toHaveAttribute("href", "/");
     expect(screen.getByTestId("auth-session-panel")).toHaveTextContent("signed-in");
   });
 });

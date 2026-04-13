@@ -7,50 +7,151 @@ export default async function AuthPage() {
   const isAuthenticated = await getIsAuthenticatedFromSessionApi();
 
   return (
-    <section className="flex flex-col gap-5">
-      <header className="rounded-3xl border border-foreground/10 bg-background p-5">
-        <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Music Assistant access</h1>
-        <p className="mt-2 text-sm leading-6 text-foreground/70">
-          Connect this app to your Music Assistant instance, then move directly into playback and
-          room control workflows.
+    <div className="flex flex-col gap-6">
+      {/* Header */}
+      <header>
+        <h1
+          className="text-2xl font-bold tracking-tight"
+          style={{ color: "var(--foreground)" }}
+        >
+          Account
+        </h1>
+        <p className="mt-1 text-sm" style={{ color: "var(--fg-secondary)" }}>
+          Connect to your Music Assistant instance to unlock playback and room control.
         </p>
       </header>
 
-      <div className="grid gap-3 lg:grid-cols-[1.2fr_1fr]">
-        <section className="rounded-3xl border border-foreground/10 bg-background p-5">
-          <h2 className="text-sm font-semibold uppercase tracking-[0.12em]">Onboarding checklist</h2>
-          <ol className="mt-3 flex flex-col gap-2 text-sm text-foreground/80">
-            <li>1. Sign in with your Music Assistant account credentials.</li>
-            <li>2. Optionally provide a provider ID if your instance requires it.</li>
-            <li>3. Confirm session status updates to “Signed in”.</li>
-          </ol>
-        </section>
-
-        <section className="rounded-3xl border border-foreground/10 bg-background p-5">
-          <h2 className="text-sm font-semibold uppercase tracking-[0.12em]">Next actions</h2>
-          <p className="mt-2 text-sm text-foreground/70">
-            {isAuthenticated
-              ? "Your session is active. Jump to operational routes to control playback."
-              : "Sign in first, then return to home to view live status and quick controls."}
-          </p>
-          <div className="mt-4 flex flex-col gap-2">
+      {/* Status banner */}
+      <div
+        className="flex items-center gap-3 rounded-2xl px-4 py-3"
+        style={{
+          background: isAuthenticated
+            ? "rgba(52, 199, 89, 0.08)"
+            : "var(--bg-surface)",
+          border: `1px solid ${isAuthenticated ? "rgba(52,199,89,0.2)" : "var(--border)"}`,
+        }}
+      >
+        <div
+          className="size-2.5 rounded-full shrink-0"
+          style={{ background: isAuthenticated ? "#34c759" : "var(--fg-tertiary)" }}
+        />
+        <p
+          className="text-sm font-medium"
+          style={{ color: isAuthenticated ? "#34c759" : "var(--fg-secondary)" }}
+        >
+          {isAuthenticated ? "Session active" : "Not signed in"}
+        </p>
+        {isAuthenticated ? (
+          <div className="ml-auto flex gap-2">
             <Link
               href="/"
-              className="inline-flex rounded-xl border border-foreground/20 px-3 py-1.5 text-sm font-medium transition hover:bg-foreground/5"
+              className="rounded-full px-3 py-1 text-xs font-semibold am-transition"
+              style={{ background: "rgba(52,199,89,0.15)", color: "#34c759" }}
             >
-              Open home dashboard
+              Go to Home
             </Link>
             <Link
               href="/players"
-              className="inline-flex rounded-xl border border-foreground/20 px-3 py-1.5 text-sm font-medium transition hover:bg-foreground/5"
+              className="rounded-full px-3 py-1 text-xs font-semibold am-transition"
+              style={{ background: "var(--bg-overlay-strong)", color: "var(--foreground)" }}
             >
-              Go to players
+              Players
             </Link>
           </div>
-        </section>
+        ) : null}
       </div>
 
-      <AuthSessionPanel initialIsAuthenticated={isAuthenticated} />
-    </section>
+      {/* Main layout: form + checklist */}
+      <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
+        <AuthSessionPanel initialIsAuthenticated={isAuthenticated} />
+
+        <div className="flex flex-col gap-4">
+          {/* Onboarding steps */}
+          <div
+            className="rounded-2xl p-5"
+            style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}
+          >
+            <h2
+              className="mb-3 text-[11px] font-semibold uppercase tracking-[0.1em]"
+              style={{ color: "var(--fg-secondary)" }}
+            >
+              Getting Started
+            </h2>
+            <ol className="flex flex-col gap-3">
+              {[
+                "Sign in with your Music Assistant credentials.",
+                "Optionally provide a provider ID if required.",
+                "Confirm the session status shows Active.",
+              ].map((step, idx) => (
+                <li key={idx} className="flex items-start gap-3">
+                  <span
+                    className="flex size-5 shrink-0 items-center justify-center rounded-full text-[11px] font-bold"
+                    style={{ background: "var(--accent-muted)", color: "var(--accent)" }}
+                  >
+                    {idx + 1}
+                  </span>
+                  <span className="text-sm" style={{ color: "var(--fg-secondary)", paddingTop: 1 }}>
+                    {step}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          </div>
+
+          {/* Quick links */}
+          {isAuthenticated ? (
+            <div
+              className="rounded-2xl p-5"
+              style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}
+            >
+              <h2
+                className="mb-3 text-[11px] font-semibold uppercase tracking-[0.1em]"
+                style={{ color: "var(--fg-secondary)" }}
+              >
+                Jump To
+              </h2>
+              <div className="flex flex-col gap-2">
+                {[
+                  { href: "/", label: "Home dashboard" },
+                  { href: "/players", label: "Player controls" },
+                  { href: "/rooms", label: "Room groups" },
+                  { href: "/library", label: "Music library" },
+                ].map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className="flex items-center justify-between rounded-xl px-3 py-2 text-sm font-medium am-transition"
+                    style={{
+                      color: "var(--foreground)",
+                      border: "1px solid var(--border)",
+                    }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLAnchorElement).style.background =
+                        "var(--bg-overlay-strong)";
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLAnchorElement).style.background = "transparent";
+                    }}
+                  >
+                    {link.label}
+                    <svg
+                      viewBox="0 0 16 16"
+                      fill="currentColor"
+                      style={{ width: 14, height: 14, color: "var(--fg-tertiary)" }}
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M6.22 3.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L9.94 8 6.22 4.28a.75.75 0 0 1 0-1.06Z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </div>
+      </div>
+    </div>
   );
 }

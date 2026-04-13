@@ -172,27 +172,57 @@ export default function LibraryPage() {
   }, [hasMore, isLoading]);
 
   return (
-    <section className="flex flex-col gap-4 rounded-3xl border border-foreground/10 bg-background p-5">
-      <header className="flex flex-col gap-2">
-        <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Library</h1>
-        <p className="text-sm leading-6 text-foreground/70">
-          Browse artists, albums, tracks, and playlists with fast local filtering.
+    <div className="flex flex-col gap-6">
+      {/* Header */}
+      <header>
+        <h1 className="text-2xl font-bold tracking-tight" style={{ color: "var(--foreground)" }}>
+          Library
+        </h1>
+        <p className="mt-1 text-sm" style={{ color: "var(--fg-secondary)" }}>
+          Browse artists, albums, tracks, and playlists.
         </p>
       </header>
 
+      {/* Search + filters */}
       <div className="flex flex-col gap-3">
-        <label htmlFor="library-query" className="text-xs uppercase tracking-[0.14em] text-foreground/60">
-          Search library
-        </label>
-        <input
-          id="library-query"
-          type="search"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="Search by title, artist, source, or keyword"
-          className="w-full rounded-xl border border-foreground/15 bg-background px-3 py-2 text-sm outline-none transition focus:border-foreground/30"
-        />
-        <div className="flex gap-2 overflow-x-auto pb-1">
+        <div className="relative">
+          <span
+            className="pointer-events-none absolute inset-y-0 left-3 flex items-center"
+            aria-hidden="true"
+          >
+            <svg
+              viewBox="0 0 16 16"
+              fill="currentColor"
+              style={{ width: 14, height: 14, color: "var(--fg-tertiary)" }}
+            >
+              <path
+                fillRule="evenodd"
+                d="M9.965 11.026a5 5 0 1 1 1.06-1.06l2.755 2.754a.75.75 0 1 1-1.06 1.06l-2.755-2.754ZM10.5 7a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0Z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </span>
+          <input
+            id="library-query"
+            type="search"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search library…"
+            style={{
+              width: "100%",
+              background: "var(--bg-surface)",
+              border: "1px solid var(--border-medium)",
+              borderRadius: "var(--radius-lg)",
+              padding: "10px 14px 10px 36px",
+              fontSize: "15px",
+              color: "var(--foreground)",
+              outline: "none",
+            }}
+          />
+        </div>
+
+        {/* Tabs */}
+        <div className="flex gap-2 overflow-x-auto pb-0.5">
           {browseTabs.map((tab) => {
             const isActive = activeTab === tab.value;
             return (
@@ -201,11 +231,12 @@ export default function LibraryPage() {
                 type="button"
                 aria-pressed={isActive}
                 onClick={() => setActiveTab(tab.value)}
-                className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
-                  isActive
-                    ? "border-foreground/30 bg-foreground/10"
-                    : "border-foreground/15 text-foreground/70 hover:bg-foreground/5"
-                }`}
+                className="shrink-0 rounded-full px-4 py-1.5 text-sm font-medium am-transition"
+                style={{
+                  background: isActive ? "var(--accent)" : "var(--bg-surface)",
+                  color: isActive ? "#ffffff" : "var(--fg-secondary)",
+                  border: isActive ? "none" : "1px solid var(--border)",
+                }}
               >
                 {tab.label}
               </button>
@@ -214,60 +245,141 @@ export default function LibraryPage() {
         </div>
       </div>
 
-      {favoriteErrorMessage || loadErrorMessage ? (
+      {/* Errors */}
+      {favoriteErrorMessage ?? loadErrorMessage ? (
         <div
-          className="rounded-2xl border border-foreground/20 bg-foreground/[0.04] p-3"
+          className="rounded-xl px-4 py-3 text-sm"
+          style={{
+            background: "rgba(252,60,68,0.08)",
+            border: "1px solid rgba(252,60,68,0.2)",
+            color: "var(--accent)",
+          }}
           role="alert"
         >
-          <p className="text-sm text-foreground/80">{favoriteErrorMessage ?? loadErrorMessage}</p>
+          {favoriteErrorMessage ?? loadErrorMessage}
         </div>
       ) : null}
 
-      <div className="flex items-center justify-between text-xs uppercase tracking-[0.12em] text-foreground/60">
-        <p>{filteredItems.length} results</p>
-        <p>{isStale || isLoading ? "Updating…" : "Up to date"}</p>
+      {/* Count / status */}
+      <div
+        className="flex items-center justify-between text-[11px] font-medium uppercase tracking-[0.08em]"
+        style={{ color: "var(--fg-tertiary)" }}
+      >
+        <span>{filteredItems.length} results</span>
+        <span>{isStale || isLoading ? "Updating…" : ""}</span>
       </div>
 
+      {/* Results */}
       {!isLoading && filteredItems.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-foreground/20 p-4 text-sm text-foreground/70">
-          No items match this filter. Try a different tab or search phrase.
-        </div>
+        <p
+          className="rounded-2xl px-4 py-8 text-center text-sm"
+          style={{
+            background: "var(--bg-surface)",
+            border: "1px dashed var(--border-medium)",
+            color: "var(--fg-secondary)",
+          }}
+        >
+          No items match this filter.
+        </p>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2">
-          {filteredItems.map((item) => {
+        <div
+          className="overflow-hidden rounded-2xl"
+          style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}
+        >
+          {filteredItems.map((item, idx) => {
             const isFavorited = favoriteIds.includes(item.id);
             const isPending = pendingFavoriteId === item.id;
             return (
-              <article
+              <div
                 key={item.id}
-                className="flex flex-col gap-2 rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-4"
+                className="flex items-center gap-3 px-4 py-3"
+                style={{ borderTop: idx > 0 ? "1px solid var(--border)" : "none" }}
               >
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-sm font-medium truncate">{item.title}</p>
-                  <span className="shrink-0 rounded-full border border-foreground/15 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-foreground/60">
-                    {item.type}
-                  </span>
-                </div>
-                <p className="text-sm text-foreground/70">{item.subtitle}</p>
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-xs uppercase tracking-[0.12em] text-foreground/60">{item.source}</p>
-                  <button
-                    type="button"
-                    aria-label={isFavorited ? `Remove ${item.title} from favorites` : `Add ${item.title} to favorites`}
-                    aria-pressed={isFavorited}
-                    className="rounded-lg border border-foreground/15 px-3 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
-                    disabled={pendingFavoriteId !== null}
-                    onClick={() => void toggleFavorite(item.id)}
+                {/* Artwork placeholder */}
+                <div
+                  className="shrink-0 rounded-lg"
+                  style={{
+                    width: 40,
+                    height: 40,
+                    background: `linear-gradient(135deg, ${
+                      item.type === "Track"
+                        ? "#fc3c44 0%, #ff8a80"
+                        : item.type === "Album"
+                          ? "#5856d6 0%, #af52de"
+                          : item.type === "Artist"
+                            ? "#007aff 0%, #34aadc"
+                            : "#34c759 0%, #30d158"
+                    } 100%)`,
+                    flexShrink: 0,
+                  }}
+                  aria-hidden="true"
+                />
+
+                {/* Labels */}
+                <div className="min-w-0 flex-1">
+                  <p
+                    className="truncate text-sm font-medium"
+                    style={{ color: "var(--foreground)" }}
                   >
-                    {isPending ? (isFavorited ? "Removing…" : "Adding…") : (isFavorited ? "♥ Saved" : "♡ Save")}
-                  </button>
+                    {item.title}
+                  </p>
+                  <p className="truncate text-xs" style={{ color: "var(--fg-secondary)" }}>
+                    {item.subtitle}
+                  </p>
                 </div>
-              </article>
+
+                {/* Type badge */}
+                <span
+                  className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium"
+                  style={{ background: "var(--bg-elevated)", color: "var(--fg-secondary)" }}
+                >
+                  {item.type}
+                </span>
+
+                {/* Favorite button */}
+                <button
+                  type="button"
+                  aria-label={
+                    isFavorited
+                      ? `Remove ${item.title} from favorites`
+                      : `Add ${item.title} to favorites`
+                  }
+                  aria-pressed={isFavorited}
+                  className="shrink-0 rounded-full p-1.5 am-transition disabled:cursor-not-allowed disabled:opacity-50"
+                  style={{
+                    color: isFavorited ? "var(--accent)" : "var(--fg-tertiary)",
+                    background: "transparent",
+                  }}
+                  disabled={pendingFavoriteId !== null}
+                  onClick={() => void toggleFavorite(item.id)}
+                >
+                  {isPending ? (
+                    <svg
+                      viewBox="0 0 16 16"
+                      fill="currentColor"
+                      style={{ width: 16, height: 16 }}
+                    >
+                      <path d="M8 3.5a4.5 4.5 0 1 0 4.292 5.835.75.75 0 0 1 1.431.43A6 6 0 1 1 14 8a.75.75 0 0 1-1.5 0c0-.827-.163-1.614-.457-2.335A4.483 4.483 0 0 0 8 3.5Z" />
+                    </svg>
+                  ) : (
+                    <svg
+                      viewBox="0 0 16 16"
+                      fill={isFavorited ? "currentColor" : "none"}
+                      stroke="currentColor"
+                      strokeWidth={isFavorited ? "0" : "1.5"}
+                      style={{ width: 16, height: 16 }}
+                    >
+                      <path d="M3.172 3.172a4 4 0 0 1 5.656 0L8 4l.172-.172a4 4 0 0 1 5.656 5.656L8 15.313l-5.828-5.829a4 4 0 0 1 0-5.656Z" />
+                    </svg>
+                  )}
+                </button>
+              </div>
             );
           })}
         </div>
       )}
+
       <div ref={sentinelRef} className="h-1 w-full" aria-hidden="true" />
-    </section>
+    </div>
   );
 }

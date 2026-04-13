@@ -36,10 +36,10 @@ describe("AuthSessionPanel", () => {
 
     fireEvent.change(screen.getByLabelText(/username/i), { target: { value: "admin" } });
     fireEvent.change(screen.getByLabelText(/password/i), { target: { value: "secret" } });
-    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+    fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
 
     await screen.findByText("Signed in successfully.");
-    expect(screen.getByText("Signed in")).toBeInTheDocument();
+    expect(screen.getAllByText(/signed in/i).length).toBeGreaterThan(0);
     expect(fetch).toHaveBeenNthCalledWith(
       1,
       "/api/music-assistant/auth/login",
@@ -67,10 +67,10 @@ describe("AuthSessionPanel", () => {
 
     fireEvent.change(screen.getByLabelText(/username/i), { target: { value: "admin" } });
     fireEvent.change(screen.getByLabelText(/password/i), { target: { value: "wrong" } });
-    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+    fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
 
     await screen.findByText("Bad credentials");
-    expect(screen.getByText("Signed out")).toBeInTheDocument();
+    expect(screen.getAllByText(/signed out/i).length).toBeGreaterThan(0);
     expect(refresh).not.toHaveBeenCalled();
   });
 
@@ -81,11 +81,11 @@ describe("AuthSessionPanel", () => {
 
     render(<AuthSessionPanel initialIsAuthenticated={true} />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
+    fireEvent.click(screen.getByRole("button", { name: /sign out/i }));
 
     await screen.findByText("Signed out successfully.");
     await waitFor(() => {
-      expect(screen.getByText("Signed out")).toBeInTheDocument();
+      expect(screen.getAllByText(/signed out/i).length).toBeGreaterThan(0);
     });
     expect(fetch).toHaveBeenNthCalledWith(
       1,

@@ -44,11 +44,11 @@ describe("AppNav", () => {
     }
   });
 
-  it("renders both desktop and mobile navs", () => {
+  it("renders both desktop and mobile navs with accessible labels", () => {
     vi.mocked(usePathname).mockReturnValue("/");
     render(<AppNav />);
 
-    expect(screen.getByRole("navigation", { name: /desktop/i })).toBeInTheDocument();
-    expect(screen.getByRole("navigation", { name: /mobile/i })).toBeInTheDocument();
+    expect(screen.getByRole("navigation", { name: "Primary navigation desktop" })).toBeInTheDocument();
+    expect(screen.getByRole("navigation", { name: "Primary navigation mobile" })).toBeInTheDocument();
   });
 });
