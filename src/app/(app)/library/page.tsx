@@ -1,18 +1,21 @@
 "use client";
 
-import { useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 
 import {
   executeMusicAssistantCommand,
   MusicAssistantCommandError,
 } from "@/lib/music-assistant/browser";
 import {
-  libraryItems,
-  matchesLibraryQuery,
-  type LibraryItemType,
-} from "../_lib/library-items";
+  fetchLibraryItemsForTypes,
+  LIBRARY_MEDIA_TYPES,
+  type LibraryMediaItem,
+  type LibraryMediaType,
+} from "@/lib/music-assistant/media-browser";
 
-const browseTabs: Array<{ label: string; value: "all" | LibraryItemType }> = [
+const PAGE_SIZE = 24;
+
+const browseTabs: Array<{ label: string; value: "all" | LibraryMediaType }> = [
   { label: "All", value: "all" },
   { label: "Tracks", value: "Track" },
   { label: "Albums", value: "Album" },
@@ -22,13 +25,29 @@ const browseTabs: Array<{ label: string; value: "all" | LibraryItemType }> = [
 
 export default function LibraryPage() {
   const [query, setQuery] = useState("");
-  const [activeTab, setActiveTab] = useState<"all" | LibraryItemType>("all");
+  const [activeTab, setActiveTab] = useState<"all" | LibraryMediaType>("all");
+  const [limit, setLimit] = useState(PAGE_SIZE);
   const deferredQuery = useDeferredValue(query);
   const isStale = deferredQuery !== query;
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [pendingFavoriteId, setPendingFavoriteId] = useState<string | null>(null);
   const [favoriteErrorMessage, setFavoriteErrorMessage] = useState<string | null>(null);
+  const [loadErrorMessage, setLoadErrorMessage] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [itemsByType, setItemsByType] = useState<Record<LibraryMediaType, LibraryMediaItem[]>>({
+    Track: [],
+    Album: [],
+    Artist: [],
+    Playlist: [],
+  });
+  const [hasMoreByType, setHasMoreByType] = useState<Record<LibraryMediaType, boolean>>({
+    Track: false,
+    Album: false,
+    Artist: false,
+    Playlist: false,
+  });
 
   useEffect(() => {
     void (async () => {
@@ -43,6 +62,49 @@ export default function LibraryPage() {
       }
     })();
   }, []);
+
+  useEffect(() => {
+    setLimit(PAGE_SIZE);
+  }, [activeTab, deferredQuery]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      setIsLoading(true);
+      setLoadErrorMessage(null);
+      try {
+        const types = activeTab === "all" ? LIBRARY_MEDIA_TYPES : [activeTab];
+        const result = await fetchLibraryItemsForTypes({
+          types,
+          query: deferredQuery,
+          limit,
+          offset: 0,
+        });
+        if (cancelled) {
+          return;
+        }
+        setItemsByType(result.itemsByType);
+        setHasMoreByType(result.hasMoreByType);
+      } catch (error) {
+        if (cancelled) {
+          return;
+        }
+        if (error instanceof MusicAssistantCommandError) {
+          setLoadErrorMessage(error.message);
+        } else {
+          setLoadErrorMessage("Unexpected error while loading library.");
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTab, deferredQuery, limit]);
 
   const toggleFavorite = useCallback(
     async (itemId: string) => {
@@ -77,13 +139,37 @@ export default function LibraryPage() {
     [favoriteIds],
   );
 
-  const filteredItems = useMemo(() => {
-    return libraryItems.filter((item) => {
-      const tabMatch = activeTab === "all" || item.type === activeTab;
-      const queryMatch = matchesLibraryQuery(item, deferredQuery);
-      return tabMatch && queryMatch;
-    });
-  }, [activeTab, deferredQuery]);
+  const filteredItems = useMemo(
+    () =>
+      LIBRARY_MEDIA_TYPES.flatMap((type) =>
+        activeTab === "all" || activeTab === type ? itemsByType[type] : [],
+      ),
+    [activeTab, itemsByType],
+  );
+
+  const hasMore =
+    activeTab === "all"
+      ? LIBRARY_MEDIA_TYPES.some((type) => hasMoreByType[type])
+      : hasMoreByType[activeTab];
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel || !hasMore || isLoading) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (entry?.isIntersecting) {
+          setLimit((prev) => prev + PAGE_SIZE);
+        }
+      },
+      { rootMargin: "240px" },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [hasMore, isLoading]);
 
   return (
     <section className="flex flex-col gap-4 rounded-3xl border border-foreground/10 bg-background p-5">
@@ -128,21 +214,21 @@ export default function LibraryPage() {
         </div>
       </div>
 
-      {favoriteErrorMessage ? (
+      {favoriteErrorMessage || loadErrorMessage ? (
         <div
           className="rounded-2xl border border-foreground/20 bg-foreground/[0.04] p-3"
           role="alert"
         >
-          <p className="text-sm text-foreground/80">{favoriteErrorMessage}</p>
+          <p className="text-sm text-foreground/80">{favoriteErrorMessage ?? loadErrorMessage}</p>
         </div>
       ) : null}
 
       <div className="flex items-center justify-between text-xs uppercase tracking-[0.12em] text-foreground/60">
         <p>{filteredItems.length} results</p>
-        <p>{isStale ? "Updating…" : "Up to date"}</p>
+        <p>{isStale || isLoading ? "Updating…" : "Up to date"}</p>
       </div>
 
-      {filteredItems.length === 0 ? (
+      {!isLoading && filteredItems.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-foreground/20 p-4 text-sm text-foreground/70">
           No items match this filter. Try a different tab or search phrase.
         </div>
@@ -181,6 +267,7 @@ export default function LibraryPage() {
           })}
         </div>
       )}
+      <div ref={sentinelRef} className="h-1 w-full" aria-hidden="true" />
     </section>
   );
 }

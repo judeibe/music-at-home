@@ -6,9 +6,14 @@ import {
   executeMusicAssistantCommand,
   MusicAssistantCommandError,
 } from "@/lib/music-assistant/browser";
-import { libraryItems, type LibraryItem, type LibraryItemType } from "@/app/(app)/_lib/library-items";
+import {
+  fetchLibraryItemsForTypes,
+  LIBRARY_MEDIA_TYPES,
+  type LibraryMediaItem,
+  type LibraryMediaType,
+} from "@/lib/music-assistant/media-browser";
 
-const TYPE_LABELS: Record<LibraryItemType, string> = {
+const TYPE_LABELS: Record<LibraryMediaType, string> = {
   Track: "Track",
   Album: "Album",
   Artist: "Artist",
@@ -16,7 +21,7 @@ const TYPE_LABELS: Record<LibraryItemType, string> = {
 };
 
 export function FavoritesList() {
-  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
+  const [favoriteItems, setFavoriteItems] = useState<LibraryMediaItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [removingId, setRemovingId] = useState<string | null>(null);
@@ -26,12 +31,13 @@ export function FavoritesList() {
     setErrorMessage(null);
 
     try {
-      const result = await executeMusicAssistantCommand<string[]>({
-        command: "favorites/list",
-        args: {},
+      const result = await fetchLibraryItemsForTypes({
+        types: LIBRARY_MEDIA_TYPES,
+        limit: 200,
+        offset: 0,
+        favorite: true,
       });
-
-      setFavoriteIds(Array.isArray(result) ? result : []);
+      setFavoriteItems(LIBRARY_MEDIA_TYPES.flatMap((type) => result.itemsByType[type]));
     } catch (error) {
       if (error instanceof MusicAssistantCommandError) {
         setErrorMessage(error.message);
@@ -56,7 +62,7 @@ export function FavoritesList() {
         command: "favorites/remove",
         args: { item_id: itemId },
       });
-      setFavoriteIds((prev) => prev.filter((id) => id !== itemId));
+      setFavoriteItems((prev) => prev.filter((item) => item.id !== itemId));
     } catch (error) {
       if (error instanceof MusicAssistantCommandError) {
         setErrorMessage(error.message);
@@ -67,10 +73,6 @@ export function FavoritesList() {
       setRemovingId(null);
     }
   }, []);
-
-  const favoriteItems = favoriteIds
-    .map((id) => libraryItems.find((item) => item.id === id))
-    .filter((item): item is LibraryItem => item !== undefined);
 
   const renderContent = () => {
     if (isLoading) {

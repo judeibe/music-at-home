@@ -1,38 +1,135 @@
 "use client";
 
-import { useDeferredValue, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import {
-  libraryItems,
-  matchesLibraryQuery,
-  type LibraryItemType,
-} from "../_lib/library-items";
+  fetchLibraryItemsForTypes,
+  LIBRARY_MEDIA_TYPES,
+  type LibraryMediaItem,
+  type LibraryMediaType,
+} from "@/lib/music-assistant/media-browser";
+import { MusicAssistantCommandError } from "@/lib/music-assistant/browser";
 
 type SearchGroup = {
-  type: LibraryItemType;
-  items: typeof libraryItems;
+  type: LibraryMediaType;
+  items: LibraryMediaItem[];
 };
 
-const searchOrder: LibraryItemType[] = ["Track", "Album", "Artist", "Playlist"];
+const PAGE_SIZE = 16;
+
+const searchOrder: LibraryMediaType[] = ["Track", "Album", "Artist", "Playlist"];
 
 export default function SearchPage() {
   const [query, setQuery] = useState("");
+  const [limit, setLimit] = useState(PAGE_SIZE);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [itemsByType, setItemsByType] = useState<Record<LibraryMediaType, LibraryMediaItem[]>>({
+    Track: [],
+    Album: [],
+    Artist: [],
+    Playlist: [],
+  });
+  const [hasMoreByType, setHasMoreByType] = useState<Record<LibraryMediaType, boolean>>({
+    Track: false,
+    Album: false,
+    Artist: false,
+    Playlist: false,
+  });
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
   const deferredQuery = useDeferredValue(query);
   const trimmedQuery = deferredQuery.trim();
   const isStale = deferredQuery !== query;
 
+  useEffect(() => {
+    setLimit(PAGE_SIZE);
+  }, [trimmedQuery]);
+
+  useEffect(() => {
+    if (trimmedQuery.length === 0) {
+      setItemsByType({
+        Track: [],
+        Album: [],
+        Artist: [],
+        Playlist: [],
+      });
+      setHasMoreByType({
+        Track: false,
+        Album: false,
+        Artist: false,
+        Playlist: false,
+      });
+      setErrorMessage(null);
+      return;
+    }
+
+    let cancelled = false;
+    void (async () => {
+      setIsLoading(true);
+      setErrorMessage(null);
+      try {
+        const result = await fetchLibraryItemsForTypes({
+          types: LIBRARY_MEDIA_TYPES,
+          query: trimmedQuery,
+          limit,
+          offset: 0,
+        });
+        if (cancelled) {
+          return;
+        }
+        setItemsByType(result.itemsByType);
+        setHasMoreByType(result.hasMoreByType);
+      } catch (error) {
+        if (cancelled) {
+          return;
+        }
+        if (error instanceof MusicAssistantCommandError) {
+          setErrorMessage(error.message);
+        } else {
+          setErrorMessage("Unexpected error while searching library.");
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [trimmedQuery, limit]);
+
   const groups = useMemo(() => {
     if (trimmedQuery.length === 0) return [];
-    const filtered = libraryItems.filter((item) => matchesLibraryQuery(item, trimmedQuery));
     const byType: SearchGroup[] = searchOrder
       .map((type) => ({
         type,
-        items: filtered.filter((item) => item.type === type),
+        items: itemsByType[type],
       }))
       .filter((group) => group.items.length > 0);
     return byType;
-  }, [trimmedQuery]);
+  }, [itemsByType, trimmedQuery]);
 
   const totalResults = groups.reduce((count, group) => count + group.items.length, 0);
+  const hasMore = LIBRARY_MEDIA_TYPES.some((type) => hasMoreByType[type]);
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel || !hasMore || isLoading || trimmedQuery.length === 0) {
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (entry?.isIntersecting) {
+          setLimit((prev) => prev + PAGE_SIZE);
+        }
+      },
+      { rootMargin: "240px" },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [hasMore, isLoading, trimmedQuery.length]);
 
   return (
     <section className="flex flex-col gap-4 rounded-3xl border border-foreground/10 bg-background p-5">
@@ -57,15 +154,21 @@ export default function SearchPage() {
         />
         <div className="flex items-center justify-between text-xs uppercase tracking-[0.12em] text-foreground/60">
           <p>{trimmedQuery.length === 0 ? "Ready" : `${totalResults} results`}</p>
-          <p>{isStale ? "Searching…" : "Synced"}</p>
+          <p>{isStale || isLoading ? "Searching…" : "Synced"}</p>
         </div>
       </div>
+
+      {errorMessage ? (
+        <div className="rounded-2xl border border-foreground/20 bg-foreground/[0.04] p-3" role="alert">
+          <p className="text-sm text-foreground/80">{errorMessage}</p>
+        </div>
+      ) : null}
 
       {trimmedQuery.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-foreground/20 p-4 text-sm text-foreground/70">
           Start typing to search your library content.
         </div>
-      ) : totalResults === 0 ? (
+      ) : !isLoading && totalResults === 0 ? (
         <div className="rounded-2xl border border-dashed border-foreground/20 p-4 text-sm text-foreground/70">
           No matches found for &ldquo;{trimmedQuery}&rdquo;.
         </div>
@@ -89,6 +192,7 @@ export default function SearchPage() {
           ))}
         </div>
       )}
+      <div ref={sentinelRef} className="h-1 w-full" aria-hidden="true" />
     </section>
   );
 }
