@@ -72,9 +72,15 @@ export type MusicAssistantPlayerFeature =
 export type MusicAssistantPlayerType = "player" | "group" | "sync_group" | (string & {});
 
 export type MusicAssistantPlayerMedia = {
+  uri?: string | null;
   title?: string | null;
   artist?: string | null;
   album?: string | null;
+  image_url?: string | null;
+  duration?: number | null;
+  elapsed_time?: number | null;
+  elapsed_time_last_updated?: number | null;
+  queue_item_id?: string | null;
 };
 
 export type MusicAssistantPlayer = {
@@ -92,4 +98,27 @@ export type MusicAssistantPlayer = {
   volume_muted?: boolean | null;
   /** IDs of child players in a sync group (present when this player is the group leader) */
   group_childs?: string[] | null;
+};
+
+export type MusicAssistantQueueItem = {
+  queue_id: string;
+  queue_item_id: string;
+  name: string;
+  duration?: number | null;
+  index?: number;
+  available?: boolean;
+};
+
+export type MusicAssistantPlayerQueue = {
+  queue_id: string;
+  active: boolean;
+  display_name: string;
+  available: boolean;
+  items: number;
+  current_index?: number | null;
+  elapsed_time?: number;
+  elapsed_time_last_updated?: number;
+  state?: MusicAssistantPlaybackState;
+  current_item?: MusicAssistantQueueItem | null;
+  next_item?: MusicAssistantQueueItem | null;
 };

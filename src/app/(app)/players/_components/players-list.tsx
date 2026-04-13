@@ -7,6 +7,10 @@ import {
   MusicAssistantCommandError,
 } from "@/lib/music-assistant/browser";
 import type { MusicAssistantPlayer } from "@/lib/music-assistant/types";
+import {
+  requestNowPlayingRefresh,
+  setNowPlayingPreferredPlayer,
+} from "../../_lib/now-playing";
 
 type TransportCommand = "play" | "pause" | "next" | "previous";
 
@@ -63,6 +67,7 @@ export function PlayersList() {
     async (playerId: string, command: TransportCommand) => {
       setActiveCommand({ playerId, command });
       setErrorMessage(null);
+      setNowPlayingPreferredPlayer(playerId);
 
       try {
         await executeMusicAssistantCommand({
@@ -71,7 +76,10 @@ export function PlayersList() {
             player_id: playerId,
           },
         });
-        await loadPlayers({ background: true });
+        await Promise.all([
+          loadPlayers({ background: true }),
+          requestNowPlayingRefresh({ playerId }),
+        ]);
       } catch (error) {
         if (error instanceof MusicAssistantCommandError) {
           setErrorMessage(error.message);
