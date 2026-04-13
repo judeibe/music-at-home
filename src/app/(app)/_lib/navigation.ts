@@ -54,4 +54,10 @@ export const appNavItems: AppNavItem[] = [
     symbol: "▣",
     description: "Connected device management",
   },
+  {
+    href: "/design-system",
+    label: "Design System",
+    symbol: "◍",
+    description: "Issue #28 UI spec and component inventory",
+  },
 ];

@@ -33,7 +33,8 @@ src/
 │   │   ├── search/           # Unified search (/search)
 │   │   ├── favorites/        # Pinned items (/favorites)
 │   │   ├── rooms/            # Multi-room grouping (/rooms)
-│   │   └── devices/          # Device management (/devices)
+│   │   ├── devices/          # Device management (/devices)
+│   │   └── design-system/    # Issue #28 UI tokens + inventory (/design-system)
 │   ├── api/
 │   │   └── music-assistant/  # Proxy route handlers
 │   │       ├── auth/login/   # POST /api/music-assistant/auth/login
@@ -42,7 +43,8 @@ src/
 │   ├── globals.css           # Tailwind imports + CSS theme variables
 │   └── layout.tsx            # Root HTML shell, fonts (Geist/Geist Mono)
 ├── docs/
-│   └── music-assitant-api.json   # Music Assistant OpenAPI spec (reference)
+│   ├── music-assitant-api.json   # Music Assistant OpenAPI spec (reference)
+│   └── issue-28-design-system-spec.md # Apple Music-inspired UI spec baseline
 └── lib/
     └── music-assistant/
         ├── client.ts         # MusicAssistantApiClient — typed HTTP client
