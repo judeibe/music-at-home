@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 import {
   executeMusicAssistantCommand,
@@ -8,9 +8,10 @@ import {
 } from "@/lib/music-assistant/browser";
 import type { MusicAssistantPlayer } from "@/lib/music-assistant/types";
 import {
-  requestNowPlayingRefresh,
-  setNowPlayingPreferredPlayer,
-} from "../../_lib/now-playing";
+  runWithRealtimeMutation,
+  useRealtimeSnapshot,
+} from "../../_lib/realtime-state";
+import { setNowPlayingPreferredPlayer } from "../../_lib/now-playing";
 
 type GroupedRoom = {
   leader: MusicAssistantPlayer;
@@ -51,55 +52,32 @@ function formatPlaybackState(state: string | undefined): string {
 }
 
 export function RoomsList() {
-  const [players, setPlayers] = useState<MusicAssistantPlayer[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const { state, refresh } = useRealtimeSnapshot();
+  const [actionErrorMessage, setActionErrorMessage] = useState<string | null>(null);
   const [activeAction, setActiveAction] = useState<ActiveAction | null>(null);
   const [groupTarget, setGroupTarget] = useState<string | null>(null);
   const groupTargetRef = useRef(groupTarget);
   groupTargetRef.current = groupTarget;
-
-  const loadPlayers = useCallback(async (options?: { background?: boolean }) => {
-    const isBackground = options?.background ?? false;
-    if (!isBackground) setIsLoading(true);
-    try {
-      const result = await executeMusicAssistantCommand<MusicAssistantPlayer[]>({
-        command: "players/all",
-        args: {},
-      });
-      setPlayers(Array.isArray(result) ? result : []);
-      setErrorMessage(null);
-    } catch (error) {
-      if (error instanceof MusicAssistantCommandError) {
-        setErrorMessage(error.message);
-      } else {
-        setErrorMessage("Unexpected error while loading players.");
-      }
-    } finally {
-      if (!isBackground) setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void loadPlayers();
-  }, [loadPlayers]);
+  const players = state.players;
+  const isLoading = state.status === "idle" || state.status === "loading";
+  const errorMessage = actionErrorMessage ?? state.errorMessage;
 
   const runTransport = useCallback(
     async (playerId: string, command: "play" | "pause" | "next" | "previous") => {
       setActiveAction({ kind: "transport", playerId, command });
-      setErrorMessage(null);
+      setActionErrorMessage(null);
       setNowPlayingPreferredPlayer(playerId);
       try {
-        await executeMusicAssistantCommand({
-          command: `players/cmd/${command}`,
-          args: { player_id: playerId },
-        });
-        await Promise.all([
-          loadPlayers({ background: true }),
-          requestNowPlayingRefresh({ playerId }),
-        ]);
+        await runWithRealtimeMutation(
+          async () =>
+            executeMusicAssistantCommand({
+              command: `players/cmd/${command}`,
+              args: { player_id: playerId },
+            }),
+          { playerId },
+        );
       } catch (error) {
-        setErrorMessage(
+        setActionErrorMessage(
           error instanceof MusicAssistantCommandError
             ? error.message
             : "Unexpected error while executing command.",
@@ -108,25 +86,25 @@ export function RoomsList() {
         setActiveAction(null);
       }
     },
-    [loadPlayers],
+    [],
   );
 
   const ungroupPlayer = useCallback(
     async (playerId: string) => {
       setActiveAction({ kind: "ungroup", playerId });
-      setErrorMessage(null);
+      setActionErrorMessage(null);
       setNowPlayingPreferredPlayer(playerId);
       try {
-        await executeMusicAssistantCommand({
-          command: "players/cmd/ungroup",
-          args: { player_id: playerId },
-        });
-        await Promise.all([
-          loadPlayers({ background: true }),
-          requestNowPlayingRefresh({ playerId }),
-        ]);
+        await runWithRealtimeMutation(
+          async () =>
+            executeMusicAssistantCommand({
+              command: "players/cmd/ungroup",
+              args: { player_id: playerId },
+            }),
+          { playerId },
+        );
       } catch (error) {
-        setErrorMessage(
+        setActionErrorMessage(
           error instanceof MusicAssistantCommandError
             ? error.message
             : "Unexpected error while ungrouping player.",
@@ -135,26 +113,26 @@ export function RoomsList() {
         setActiveAction(null);
       }
     },
-    [loadPlayers],
+    [],
   );
 
   const groupPlayer = useCallback(
     async (memberId: string, targetId: string) => {
       setActiveAction({ kind: "group", targetId, memberId });
       setGroupTarget(null);
-      setErrorMessage(null);
+      setActionErrorMessage(null);
       setNowPlayingPreferredPlayer(targetId);
       try {
-        await executeMusicAssistantCommand({
-          command: "players/cmd/group",
-          args: { player_id: memberId, target_player_id: targetId },
-        });
-        await Promise.all([
-          loadPlayers({ background: true }),
-          requestNowPlayingRefresh({ playerId: targetId }),
-        ]);
+        await runWithRealtimeMutation(
+          async () =>
+            executeMusicAssistantCommand({
+              command: "players/cmd/group",
+              args: { player_id: memberId, target_player_id: targetId },
+            }),
+          { playerId: targetId },
+        );
       } catch (error) {
-        setErrorMessage(
+        setActionErrorMessage(
           error instanceof MusicAssistantCommandError
             ? error.message
             : "Unexpected error while grouping players.",
@@ -163,8 +141,21 @@ export function RoomsList() {
         setActiveAction(null);
       }
     },
-    [loadPlayers],
+    [],
   );
+
+  const handleManualRefresh = useCallback(async () => {
+    setActionErrorMessage(null);
+    try {
+      await refresh();
+    } catch (error) {
+      setActionErrorMessage(
+        error instanceof MusicAssistantCommandError
+          ? error.message
+          : "Unexpected error while loading players.",
+      );
+    }
+  }, [refresh]);
 
   const isBusy = activeAction !== null;
 
@@ -428,7 +419,7 @@ export function RoomsList() {
           type="button"
           className="rounded-lg border border-foreground/15 px-3 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-50"
           disabled={isLoading || isBusy}
-          onClick={() => void loadPlayers()}
+          onClick={() => void handleManualRefresh()}
         >
           Refresh
         </button>

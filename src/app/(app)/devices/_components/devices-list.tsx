@@ -7,6 +7,10 @@ import {
   MusicAssistantCommandError,
 } from "@/lib/music-assistant/browser";
 import type { MusicAssistantPlayer } from "@/lib/music-assistant/types";
+import {
+  runWithRealtimeMutation,
+  useRealtimeSnapshot,
+} from "../../_lib/realtime-state";
 
 type ActiveAction =
   | { kind: "power"; playerId: string }
@@ -70,35 +74,12 @@ function VolumeControl({
 }
 
 export function DevicesList() {
-  const [players, setPlayers] = useState<MusicAssistantPlayer[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const { state, refresh } = useRealtimeSnapshot();
+  const [actionErrorMessage, setActionErrorMessage] = useState<string | null>(null);
   const [activeAction, setActiveAction] = useState<ActiveAction | null>(null);
-
-  const loadPlayers = useCallback(async (options?: { background?: boolean }) => {
-    const isBackground = options?.background ?? false;
-    if (!isBackground) setIsLoading(true);
-    try {
-      const result = await executeMusicAssistantCommand<MusicAssistantPlayer[]>({
-        command: "players/all",
-        args: {},
-      });
-      setPlayers(Array.isArray(result) ? result : []);
-      setErrorMessage(null);
-    } catch (error) {
-      if (error instanceof MusicAssistantCommandError) {
-        setErrorMessage(error.message);
-      } else {
-        setErrorMessage("Unexpected error while loading devices.");
-      }
-    } finally {
-      if (!isBackground) setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void loadPlayers();
-  }, [loadPlayers]);
+  const players = state.players;
+  const isLoading = state.status === "idle" || state.status === "loading";
+  const errorMessage = actionErrorMessage ?? state.errorMessage;
 
   const togglePower = useCallback(
     async (player: MusicAssistantPlayer) => {
@@ -106,16 +87,19 @@ export function DevicesList() {
       if (!supportsPower) return;
 
       setActiveAction({ kind: "power", playerId: player.player_id });
-      setErrorMessage(null);
+      setActionErrorMessage(null);
       try {
         const powered = player.playback_state !== "idle";
-        await executeMusicAssistantCommand({
-          command: "players/cmd/power",
-          args: { player_id: player.player_id, powered: !powered },
-        });
-        await loadPlayers({ background: true });
+        await runWithRealtimeMutation(
+          async () =>
+            executeMusicAssistantCommand({
+              command: "players/cmd/power",
+              args: { player_id: player.player_id, powered: !powered },
+            }),
+          { playerId: player.player_id },
+        );
       } catch (error) {
-        setErrorMessage(
+        setActionErrorMessage(
           error instanceof MusicAssistantCommandError
             ? error.message
             : "Unexpected error toggling power.",
@@ -124,7 +108,7 @@ export function DevicesList() {
         setActiveAction(null);
       }
     },
-    [loadPlayers],
+    [],
   );
 
   const toggleMute = useCallback(
@@ -133,15 +117,18 @@ export function DevicesList() {
       if (!supportsMute) return;
 
       setActiveAction({ kind: "mute", playerId: player.player_id });
-      setErrorMessage(null);
+      setActionErrorMessage(null);
       try {
-        await executeMusicAssistantCommand({
-          command: "players/cmd/mute",
-          args: { player_id: player.player_id, muted: !player.volume_muted },
-        });
-        await loadPlayers({ background: true });
+        await runWithRealtimeMutation(
+          async () =>
+            executeMusicAssistantCommand({
+              command: "players/cmd/mute",
+              args: { player_id: player.player_id, muted: !player.volume_muted },
+            }),
+          { playerId: player.player_id },
+        );
       } catch (error) {
-        setErrorMessage(
+        setActionErrorMessage(
           error instanceof MusicAssistantCommandError
             ? error.message
             : "Unexpected error toggling mute.",
@@ -150,21 +137,24 @@ export function DevicesList() {
         setActiveAction(null);
       }
     },
-    [loadPlayers],
+    [],
   );
 
   const setVolume = useCallback(
     async (playerId: string, level: number) => {
       setActiveAction({ kind: "volume", playerId });
-      setErrorMessage(null);
+      setActionErrorMessage(null);
       try {
-        await executeMusicAssistantCommand({
-          command: "players/cmd/volume_set",
-          args: { player_id: playerId, volume_level: level },
-        });
-        await loadPlayers({ background: true });
+        await runWithRealtimeMutation(
+          async () =>
+            executeMusicAssistantCommand({
+              command: "players/cmd/volume_set",
+              args: { player_id: playerId, volume_level: level },
+            }),
+          { playerId },
+        );
       } catch (error) {
-        setErrorMessage(
+        setActionErrorMessage(
           error instanceof MusicAssistantCommandError
             ? error.message
             : "Unexpected error setting volume.",
@@ -173,8 +163,21 @@ export function DevicesList() {
         setActiveAction(null);
       }
     },
-    [loadPlayers],
+    [],
   );
+
+  const handleManualRefresh = useCallback(async () => {
+    setActionErrorMessage(null);
+    try {
+      await refresh();
+    } catch (error) {
+      setActionErrorMessage(
+        error instanceof MusicAssistantCommandError
+          ? error.message
+          : "Unexpected error while loading devices.",
+      );
+    }
+  }, [refresh]);
 
   const isBusy = activeAction !== null;
 
@@ -316,7 +319,7 @@ export function DevicesList() {
           type="button"
           className="rounded-lg border border-foreground/15 px-3 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-50"
           disabled={isLoading || isBusy}
-          onClick={() => void loadPlayers()}
+          onClick={() => void handleManualRefresh()}
         >
           Refresh
         </button>

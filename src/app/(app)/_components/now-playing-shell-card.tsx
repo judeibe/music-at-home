@@ -12,6 +12,7 @@ import {
   setNowPlayingPreferredPlayer,
   useNowPlayingSnapshot,
 } from "../_lib/now-playing";
+import { runWithRealtimeMutation } from "../_lib/realtime-state";
 
 type TransportCommand = "play" | "pause" | "next" | "previous";
 
@@ -29,7 +30,7 @@ function formatDuration(totalSeconds: number): string {
 }
 
 export function NowPlayingShellCard() {
-  const { state, refresh } = useNowPlayingSnapshot();
+  const { state } = useNowPlayingSnapshot();
   const [activeCommand, setActiveCommand] = useState<TransportCommand | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -58,11 +59,14 @@ export function NowPlayingShellCard() {
     setNowPlayingPreferredPlayer(player.player_id);
 
     try {
-      await executeMusicAssistantCommand({
-        command: `players/cmd/${command}`,
-        args: { player_id: player.player_id },
-      });
-      await refresh({ playerId: player.player_id });
+      await runWithRealtimeMutation(
+        async () =>
+          executeMusicAssistantCommand({
+            command: `players/cmd/${command}`,
+            args: { player_id: player.player_id },
+          }),
+        { playerId: player.player_id },
+      );
     } catch (error) {
       setActionError(
         error instanceof MusicAssistantCommandError
