@@ -23,6 +23,13 @@ const browseTabs: Array<{ label: string; value: "all" | LibraryMediaType }> = [
   { label: "Playlists", value: "Playlist" },
 ];
 
+const mediaTypeLabel: Record<LibraryMediaType, string> = {
+  Track: "Tracks",
+  Album: "Albums",
+  Artist: "Artists",
+  Playlist: "Playlists",
+};
+
 export default function LibraryPage() {
   const [query, setQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"all" | LibraryMediaType>("all");
@@ -106,38 +113,36 @@ export default function LibraryPage() {
     };
   }, [activeTab, deferredQuery, limit]);
 
-  const toggleFavorite = useCallback(
-    async (itemId: string) => {
-      setPendingFavoriteId(itemId);
-      setFavoriteErrorMessage(null);
-      const isFavorited = favoriteIds.includes(itemId);
+  const favoriteIdSet = useMemo(() => new Set(favoriteIds), [favoriteIds]);
 
-      try {
-        if (isFavorited) {
-          await executeMusicAssistantCommand({
-            command: "favorites/remove",
-            args: { item_id: itemId },
-          });
-          setFavoriteIds((prev) => prev.filter((id) => id !== itemId));
-        } else {
-          await executeMusicAssistantCommand({
-            command: "favorites/add",
-            args: { item_id: itemId },
-          });
-          setFavoriteIds((prev) => [...prev, itemId]);
-        }
-      } catch (error) {
-        if (error instanceof MusicAssistantCommandError) {
-          setFavoriteErrorMessage(error.message);
-        } else {
-          setFavoriteErrorMessage("Unexpected error while updating favorites.");
-        }
-      } finally {
-        setPendingFavoriteId(null);
+  const toggleFavorite = useCallback(async (itemId: string, isFavorited: boolean) => {
+    setPendingFavoriteId(itemId);
+    setFavoriteErrorMessage(null);
+
+    try {
+      if (isFavorited) {
+        await executeMusicAssistantCommand({
+          command: "favorites/remove",
+          args: { item_id: itemId },
+        });
+        setFavoriteIds((prev) => prev.filter((id) => id !== itemId));
+      } else {
+        await executeMusicAssistantCommand({
+          command: "favorites/add",
+          args: { item_id: itemId },
+        });
+        setFavoriteIds((prev) => [...prev, itemId]);
       }
-    },
-    [favoriteIds],
-  );
+    } catch (error) {
+      if (error instanceof MusicAssistantCommandError) {
+        setFavoriteErrorMessage(error.message);
+      } else {
+        setFavoriteErrorMessage("Unexpected error while updating favorites.");
+      }
+    } finally {
+      setPendingFavoriteId(null);
+    }
+  }, []);
 
   const filteredItems = useMemo(
     () =>
@@ -145,6 +150,11 @@ export default function LibraryPage() {
         activeTab === "all" || activeTab === type ? itemsByType[type] : [],
       ),
     [activeTab, itemsByType],
+  );
+
+  const totalLoaded = useMemo(
+    () => LIBRARY_MEDIA_TYPES.reduce((count, type) => count + itemsByType[type].length, 0),
+    [itemsByType],
   );
 
   const hasMore =
@@ -171,48 +181,62 @@ export default function LibraryPage() {
     return () => observer.disconnect();
   }, [hasMore, isLoading]);
 
-  return (
-    <section className="flex flex-col gap-4 rounded-3xl border border-foreground/10 bg-background p-5">
-      <header className="flex flex-col gap-2">
-        <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Library</h1>
-        <p className="text-sm leading-6 text-foreground/70">
-          Browse artists, albums, tracks, and playlists with fast local filtering.
-        </p>
-      </header>
+  const activeFilterLabel = activeTab === "all" ? "All media types" : `${mediaTypeLabel[activeTab]} only`;
 
-      <div className="flex flex-col gap-3">
-        <label htmlFor="library-query" className="text-xs uppercase tracking-[0.14em] text-foreground/60">
-          Search library
-        </label>
-        <input
-          id="library-query"
-          type="search"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="Search by title, artist, source, or keyword"
-          className="w-full rounded-xl border border-foreground/15 bg-background px-3 py-2 text-sm outline-none transition focus:border-foreground/30"
-        />
-        <div className="flex gap-2 overflow-x-auto pb-1">
+  return (
+    <section className="flex flex-col gap-5 rounded-3xl border border-foreground/10 bg-background p-5 md:gap-6">
+      <header className="flex flex-col gap-3 rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="flex flex-col gap-1">
+            <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Library</h1>
+            <p className="text-sm leading-6 text-foreground/70">
+              Browse artists, albums, tracks, and playlists with fast local filtering.
+            </p>
+          </div>
+          <div className="rounded-full border border-foreground/15 bg-background px-3 py-1 text-xs uppercase tracking-[0.12em] text-foreground/60">
+            {activeFilterLabel}
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-3">
+          <label htmlFor="library-query" className="text-xs uppercase tracking-[0.14em] text-foreground/60">
+            Search library
+          </label>
+          <input
+            id="library-query"
+            type="search"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search by title, artist, source, or keyword"
+            className="w-full rounded-xl border border-foreground/15 bg-background px-3 py-2 text-sm outline-none transition focus:border-foreground/30"
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
           {browseTabs.map((tab) => {
             const isActive = activeTab === tab.value;
+            const tabCount = tab.value === "all" ? totalLoaded : itemsByType[tab.value].length;
             return (
               <button
                 key={tab.value}
                 type="button"
                 aria-pressed={isActive}
                 onClick={() => setActiveTab(tab.value)}
-                className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
+                className={`flex items-center justify-center gap-2 rounded-xl border px-3 py-2 text-xs font-medium transition sm:w-auto ${
                   isActive
-                    ? "border-foreground/30 bg-foreground/10"
+                    ? "border-foreground/35 bg-foreground/10"
                     : "border-foreground/15 text-foreground/70 hover:bg-foreground/5"
                 }`}
               >
-                {tab.label}
+                <span>{tab.label}</span>
+                <span className="rounded-full border border-foreground/15 px-1.5 py-0.5 text-[10px] leading-none">
+                  {tabCount}
+                </span>
               </button>
             );
           })}
         </div>
-      </div>
+      </header>
 
       {favoriteErrorMessage || loadErrorMessage ? (
         <div
@@ -223,7 +247,7 @@ export default function LibraryPage() {
         </div>
       ) : null}
 
-      <div className="flex items-center justify-between text-xs uppercase tracking-[0.12em] text-foreground/60">
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-foreground/10 bg-foreground/[0.02] px-3 py-2 text-xs uppercase tracking-[0.12em] text-foreground/60">
         <p>{filteredItems.length} results</p>
         <p>{isStale || isLoading ? "Updating…" : "Up to date"}</p>
       </div>
@@ -233,31 +257,36 @@ export default function LibraryPage() {
           No items match this filter. Try a different tab or search phrase.
         </div>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {filteredItems.map((item) => {
-            const isFavorited = favoriteIds.includes(item.id);
+            const isFavorited = favoriteIdSet.has(item.id);
             const isPending = pendingFavoriteId === item.id;
             return (
               <article
                 key={item.id}
-                className="flex flex-col gap-2 rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-4"
+                className="flex flex-col gap-3 rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-4"
               >
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-sm font-medium truncate">{item.title}</p>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 flex-col gap-1">
+                    <p className="truncate text-sm font-semibold">{item.title}</p>
+                    <p className="text-sm text-foreground/70">{item.subtitle}</p>
+                  </div>
                   <span className="shrink-0 rounded-full border border-foreground/15 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-foreground/60">
                     {item.type}
                   </span>
                 </div>
-                <p className="text-sm text-foreground/70">{item.subtitle}</p>
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-xs uppercase tracking-[0.12em] text-foreground/60">{item.source}</p>
+
+                <div className="mt-auto flex items-center justify-between gap-2 border-t border-foreground/10 pt-3">
+                  <p className="truncate text-xs uppercase tracking-[0.12em] text-foreground/60">
+                    {item.source}
+                  </p>
                   <button
                     type="button"
                     aria-label={isFavorited ? `Remove ${item.title} from favorites` : `Add ${item.title} to favorites`}
                     aria-pressed={isFavorited}
-                    className="rounded-lg border border-foreground/15 px-3 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
+                    className="shrink-0 rounded-lg border border-foreground/15 px-3 py-1 text-xs transition hover:bg-foreground/5 disabled:cursor-not-allowed disabled:opacity-50"
                     disabled={pendingFavoriteId !== null}
-                    onClick={() => void toggleFavorite(item.id)}
+                    onClick={() => void toggleFavorite(item.id, isFavorited)}
                   >
                     {isPending ? (isFavorited ? "Removing…" : "Adding…") : (isFavorited ? "♥ Saved" : "♡ Save")}
                   </button>
