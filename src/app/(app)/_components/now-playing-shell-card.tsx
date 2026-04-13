@@ -48,6 +48,11 @@ export function NowPlayingShellCard() {
   const canPause = player?.supported_features?.includes("pause") ?? false;
   const canSkip = player?.supported_features?.includes("next_previous") ?? false;
   const isPlaying = state.playbackState === "playing";
+  const trackTitle = player?.current_media?.title?.trim() ? player.current_media.title : "No track selected";
+  const artistName = player?.current_media?.artist?.trim() ? player.current_media.artist : "No artist info";
+  const playerStateSummary = player
+    ? `${player.name} · ${formatPlaybackState(state.playbackState)}`
+    : "No active player";
 
   async function runTransportCommand(command: TransportCommand) {
     if (!player?.player_id) {
@@ -79,12 +84,12 @@ export function NowPlayingShellCard() {
   }
 
   return (
-    <section className="flex flex-col gap-3 rounded-3xl border border-foreground/10 bg-background px-4 py-3">
+    <section className="flex flex-col gap-3 rounded-3xl border border-foreground/15 bg-background/95 p-4 shadow-[0_8px_24px_-20px_hsl(var(--foreground))]">
       <header className="flex items-center justify-between gap-3">
-        <h2 className="text-xs uppercase tracking-[0.16em] text-foreground/60">Now Playing</h2>
+        <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-foreground/60">Now Playing</h2>
         <button
           type="button"
-          className="rounded-lg border border-foreground/15 px-2.5 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-lg border border-foreground/20 bg-background px-2.5 py-1 text-xs font-medium transition-colors hover:bg-foreground/[0.04] disabled:cursor-not-allowed disabled:opacity-50"
           disabled={state.status === "loading" || activeCommand !== null}
           onClick={() => void requestNowPlayingRefresh()}
         >
@@ -92,41 +97,44 @@ export function NowPlayingShellCard() {
         </button>
       </header>
 
-      {state.status === "loading" && !player ? (
-        <p className="text-sm text-foreground/70">Loading playback…</p>
-      ) : (
-        <div className="flex flex-col gap-1">
-          <p className="text-sm font-medium">
-            {player?.current_media?.title?.trim() ? player.current_media.title : "No track selected"}
-          </p>
-          <p className="text-xs text-foreground/65">
-            {player?.current_media?.artist?.trim() ? player.current_media.artist : "No artist info"}
-          </p>
-          <p className="text-[11px] uppercase tracking-[0.12em] text-foreground/55">
-            {player ? `${player.name} · ${formatPlaybackState(state.playbackState)}` : "No active player"}
-          </p>
-        </div>
-      )}
-
-      {state.durationSeconds && state.durationSeconds > 0 ? (
-        <div className="flex flex-col gap-1">
-          <div className="h-1.5 w-full overflow-hidden rounded-full bg-foreground/10">
-            <div
-              className="h-full rounded-full bg-foreground/60 transition-[width] duration-200"
-              style={{ width: `${progressPercentage}%` }}
-            />
+      <div className="flex flex-col gap-3 rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-3.5">
+        {state.status === "loading" && !player ? (
+          <p className="text-sm text-foreground/70">Loading playback…</p>
+        ) : (
+          <div className="flex flex-col gap-2">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-base font-semibold leading-tight">{trackTitle}</p>
+                <p className="truncate text-sm text-foreground/70">{artistName}</p>
+              </div>
+              <p className="shrink-0 rounded-full border border-foreground/15 bg-background px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-foreground/70">
+                {formatPlaybackState(state.playbackState)}
+              </p>
+            </div>
+            <p className="text-[11px] uppercase tracking-[0.12em] text-foreground/55">{playerStateSummary}</p>
           </div>
-          <p className="text-[11px] text-foreground/60">
-            {state.elapsedSeconds !== null ? formatDuration(state.elapsedSeconds) : "0:00"} /{" "}
-            {formatDuration(state.durationSeconds)}
-          </p>
-        </div>
-      ) : null}
+        )}
 
-      <div className="flex flex-wrap items-center gap-2">
+        {state.durationSeconds && state.durationSeconds > 0 ? (
+          <div className="flex flex-col gap-1.5">
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-foreground/12">
+              <div
+                className="h-full rounded-full bg-foreground/70 transition-[width] duration-200"
+                style={{ width: `${progressPercentage}%` }}
+              />
+            </div>
+            <p className="text-[11px] text-foreground/60">
+              {state.elapsedSeconds !== null ? formatDuration(state.elapsedSeconds) : "0:00"} /{" "}
+              {formatDuration(state.durationSeconds)}
+            </p>
+          </div>
+        ) : null}
+      </div>
+
+      <div className="grid grid-cols-3 gap-2">
         <button
           type="button"
-          className="rounded-lg border border-foreground/15 px-3 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-xl border border-foreground/15 bg-background px-3 py-2 text-sm font-medium transition-colors hover:bg-foreground/[0.04] disabled:cursor-not-allowed disabled:opacity-50"
           disabled={!player?.available || !canSkip || activeCommand !== null}
           onClick={() => void runTransportCommand("previous")}
         >
@@ -134,7 +142,7 @@ export function NowPlayingShellCard() {
         </button>
         <button
           type="button"
-          className="rounded-lg border border-foreground/15 px-3 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-xl border border-foreground/25 bg-foreground/[0.08] px-3 py-2 text-sm font-semibold transition-colors hover:bg-foreground/[0.12] disabled:cursor-not-allowed disabled:opacity-50"
           disabled={!player?.available || !canPause || activeCommand !== null}
           onClick={() => void runTransportCommand(isPlaying ? "pause" : "play")}
         >
@@ -142,7 +150,7 @@ export function NowPlayingShellCard() {
         </button>
         <button
           type="button"
-          className="rounded-lg border border-foreground/15 px-3 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-xl border border-foreground/15 bg-background px-3 py-2 text-sm font-medium transition-colors hover:bg-foreground/[0.04] disabled:cursor-not-allowed disabled:opacity-50"
           disabled={!player?.available || !canSkip || activeCommand !== null}
           onClick={() => void runTransportCommand("next")}
         >
@@ -150,15 +158,24 @@ export function NowPlayingShellCard() {
         </button>
       </div>
 
-      <div className="flex flex-col gap-2 rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-3">
-        <p className="text-xs uppercase tracking-[0.12em] text-foreground/60">Queue Preview</p>
+      <div className="flex flex-col gap-2 rounded-2xl border border-foreground/10 bg-foreground/[0.02] p-3">
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-xs uppercase tracking-[0.12em] text-foreground/60">Queue Preview</p>
+          <p className="rounded-full border border-foreground/15 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-foreground/55">
+            {state.queuePreview.length} upcoming
+          </p>
+        </div>
         {queueIsEmpty ? (
           <p className="text-xs text-foreground/70">Queue is empty.</p>
         ) : state.queuePreview.length > 0 ? (
           <ol className="flex flex-col gap-1 text-xs text-foreground/80">
-            {state.queuePreview.map((item) => (
-              <li key={item.queue_item_id} className="truncate">
-                {item.name}
+            {state.queuePreview.map((item, index) => (
+              <li
+                key={item.queue_item_id}
+                className="flex items-center gap-2 rounded-md border border-transparent px-2 py-1 even:border-foreground/10"
+              >
+                <span className="text-[10px] text-foreground/50">{index + 1}</span>
+                <span className="truncate">{item.name}</span>
               </li>
             ))}
           </ol>

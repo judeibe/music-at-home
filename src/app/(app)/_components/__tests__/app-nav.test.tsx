@@ -51,4 +51,12 @@ describe("AppNav", () => {
     expect(screen.getByRole("navigation", { name: /desktop/i })).toBeInTheDocument();
     expect(screen.getByRole("navigation", { name: /mobile/i })).toBeInTheDocument();
   });
+
+  it("can render only the mobile nav when desktop is disabled", () => {
+    vi.mocked(usePathname).mockReturnValue("/");
+    render(<AppNav includeDesktop={false} />);
+
+    expect(screen.queryByRole("navigation", { name: /desktop/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("navigation", { name: /mobile/i })).toBeInTheDocument();
+  });
 });
