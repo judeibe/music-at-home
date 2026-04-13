@@ -7,6 +7,10 @@ import {
   MusicAssistantCommandError,
 } from "@/lib/music-assistant/browser";
 import type { MusicAssistantPlayer } from "@/lib/music-assistant/types";
+import {
+  requestNowPlayingRefresh,
+  setNowPlayingPreferredPlayer,
+} from "../../_lib/now-playing";
 
 type GroupedRoom = {
   leader: MusicAssistantPlayer;
@@ -84,12 +88,16 @@ export function RoomsList() {
     async (playerId: string, command: "play" | "pause" | "next" | "previous") => {
       setActiveAction({ kind: "transport", playerId, command });
       setErrorMessage(null);
+      setNowPlayingPreferredPlayer(playerId);
       try {
         await executeMusicAssistantCommand({
           command: `players/cmd/${command}`,
           args: { player_id: playerId },
         });
-        await loadPlayers({ background: true });
+        await Promise.all([
+          loadPlayers({ background: true }),
+          requestNowPlayingRefresh({ playerId }),
+        ]);
       } catch (error) {
         setErrorMessage(
           error instanceof MusicAssistantCommandError
@@ -107,12 +115,16 @@ export function RoomsList() {
     async (playerId: string) => {
       setActiveAction({ kind: "ungroup", playerId });
       setErrorMessage(null);
+      setNowPlayingPreferredPlayer(playerId);
       try {
         await executeMusicAssistantCommand({
           command: "players/cmd/ungroup",
           args: { player_id: playerId },
         });
-        await loadPlayers({ background: true });
+        await Promise.all([
+          loadPlayers({ background: true }),
+          requestNowPlayingRefresh({ playerId }),
+        ]);
       } catch (error) {
         setErrorMessage(
           error instanceof MusicAssistantCommandError
@@ -131,12 +143,16 @@ export function RoomsList() {
       setActiveAction({ kind: "group", targetId, memberId });
       setGroupTarget(null);
       setErrorMessage(null);
+      setNowPlayingPreferredPlayer(targetId);
       try {
         await executeMusicAssistantCommand({
           command: "players/cmd/group",
           args: { player_id: memberId, target_player_id: targetId },
         });
-        await loadPlayers({ background: true });
+        await Promise.all([
+          loadPlayers({ background: true }),
+          requestNowPlayingRefresh({ playerId: targetId }),
+        ]);
       } catch (error) {
         setErrorMessage(
           error instanceof MusicAssistantCommandError

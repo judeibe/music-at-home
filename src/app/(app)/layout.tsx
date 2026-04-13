@@ -1,4 +1,5 @@
 import { AppNav } from "./_components/app-nav";
+import { NowPlayingShellCard } from "./_components/now-playing-shell-card";
 import { getIsAuthenticatedFromSessionApi } from "./_lib/auth-session";
 
 const APP_NAME = "Music at Home";
@@ -29,12 +30,7 @@ export default async function AppLayout({
           <AppNav isAuthenticated={isAuthenticated} />
         </aside>
         <main className="flex flex-col gap-3">
-          <section className="rounded-3xl border border-foreground/10 bg-background px-4 py-3">
-            <h2 className="text-xs uppercase tracking-[0.16em] text-foreground/60">
-              Now Playing
-            </h2>
-            <p className="text-sm font-medium">No track selected</p>
-          </section>
+          <NowPlayingShellCard />
           {children}
         </main>
       </div>
