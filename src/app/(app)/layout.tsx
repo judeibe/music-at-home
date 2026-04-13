@@ -1,9 +1,9 @@
 import { AppNav } from "./_components/app-nav";
+import { NowPlayingBar } from "./_components/now-playing-bar";
 import { NowPlayingShellCard } from "./_components/now-playing-shell-card";
 import { getIsAuthenticatedFromSessionApi } from "./_lib/auth-session";
 
 const APP_NAME = "Music at Home";
-const APP_SLUG = "music-at-home";
 
 export default async function AppLayout({
   children,
@@ -13,28 +13,83 @@ export default async function AppLayout({
   const isAuthenticated = await getIsAuthenticatedFromSessionApi();
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col bg-background px-4 pb-28 pt-4 md:px-6 md:pb-8">
-      <header className="mb-4 flex flex-col gap-1">
-        <p
-          aria-hidden="true"
-          className="text-xs font-medium uppercase tracking-[0.18em] text-foreground/60"
+    <>
+      {/* ── Desktop layout (md+): fixed-height two-column ── */}
+      <div
+        className="hidden md:flex"
+        style={{ height: "100dvh", overflow: "hidden" }}
+      >
+        {/* Sidebar */}
+        <aside
+          className="am-sidebar flex shrink-0 flex-col"
+          style={{ width: "var(--sidebar-width)" }}
         >
-          {APP_SLUG}
-        </p>
-        <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">
-          {APP_NAME}
-        </h1>
-      </header>
-      <div className="grid flex-1 gap-4 md:grid-cols-[260px_1fr]">
-        <aside className="hidden rounded-3xl border border-foreground/10 bg-background p-3 md:block">
-          <AppNav isAuthenticated={isAuthenticated} />
+          {/* App name */}
+          <div className="px-5 pb-3 pt-5">
+            <p
+              className="text-[11px] font-semibold uppercase tracking-[0.14em]"
+              style={{ color: "var(--accent)" }}
+            >
+              {APP_NAME}
+            </p>
+          </div>
+
+          {/* Navigation — scrollable */}
+          <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-3">
+            <AppNav isAuthenticated={isAuthenticated} />
+          </div>
+
+          {/* Now playing — sidebar footer */}
+          <div
+            className="shrink-0 border-t"
+            style={{ borderColor: "var(--border)" }}
+          >
+            <NowPlayingShellCard compact />
+          </div>
         </aside>
-        <main className="flex flex-col gap-3">
-          <NowPlayingShellCard />
+
+        {/* Main content — scrollable */}
+        <main className="flex min-w-0 flex-1 flex-col overflow-y-auto">
+          <div className="flex-1 p-6">
+            {children}
+          </div>
+        </main>
+      </div>
+
+      {/* ── Mobile layout (<md): standard scroll ── */}
+      <div
+        className="flex flex-col md:hidden"
+        style={{
+          minHeight: "100dvh",
+          paddingBottom:
+            "calc(var(--now-playing-height) + var(--mobile-nav-height) + env(safe-area-inset-bottom))",
+        }}
+      >
+        <header
+          className="sticky top-0 z-10 border-b px-4 py-3 backdrop-blur-md"
+          style={{
+            background: "color-mix(in srgb, var(--background) 85%, transparent)",
+            borderColor: "var(--border)",
+          }}
+        >
+          <p
+            className="text-sm font-semibold"
+            style={{ color: "var(--accent)" }}
+          >
+            {APP_NAME}
+          </p>
+        </header>
+
+        <main className="flex-1 px-4 py-4">
           {children}
         </main>
       </div>
-      <AppNav isAuthenticated={isAuthenticated} />
-    </div>
+
+      {/* ── Mobile fixed bottom: now-playing bar + tab nav ── */}
+      <div className="fixed inset-x-0 bottom-0 z-50 md:hidden">
+        <NowPlayingBar />
+        <AppNav isAuthenticated={isAuthenticated} />
+      </div>
+    </>
   );
 }

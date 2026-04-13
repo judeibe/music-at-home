@@ -41,8 +41,9 @@ describe("HomePage route", () => {
 
     render(await HomePage());
 
-    expect(screen.getByRole("heading", { name: "Home dashboard" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Go to auth" })).toHaveAttribute("href", "/auth");
+    // Dynamic greeting heading (Good morning/afternoon/evening)
+    expect(screen.getByRole("heading", { name: /^Good (morning|afternoon|evening)$/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Go to Account" })).toHaveAttribute("href", "/auth");
     expect(executeAuthenticatedMusicAssistantCommand).not.toHaveBeenCalled();
   });
 
@@ -101,14 +102,10 @@ describe("HomePage route", () => {
 
     render(await HomePage());
 
-    expect(screen.getByRole("heading", { name: "Recent playback" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Recently Played" })).toBeInTheDocument();
     expect(screen.getByText("Running Up That Hill")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Active rooms" })).toBeInTheDocument();
-    expect(screen.getByText("1 active room groups")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Player controls/i })).toHaveAttribute(
-      "href",
-      "/players",
-    );
-    expect(screen.getByText("2 total players, 1 queues tracked")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Active Rooms" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Players/i })).toHaveAttribute("href", "/players");
+    expect(screen.getByText("2 total")).toBeInTheDocument();
   });
 });

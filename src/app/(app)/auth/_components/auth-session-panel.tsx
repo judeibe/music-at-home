@@ -42,7 +42,6 @@ export function AuthSessionPanel({ initialIsAuthenticated }: AuthSessionPanelPro
       headers: { Accept: "application/json" },
     });
     const payload = await readJson<{ authenticated?: boolean }>(response);
-
     const authenticated = Boolean(payload?.authenticated);
     setIsAuthenticated(authenticated);
     return authenticated;
@@ -54,20 +53,15 @@ export function AuthSessionPanel({ initialIsAuthenticated }: AuthSessionPanelPro
     setErrorMessage(null);
     setStatusMessage(null);
 
-    const requestBody = {
-      username,
-      password,
-      providerId: providerId === "" ? undefined : providerId,
-    };
-
     try {
       const response = await fetch("/api/music-assistant/auth/login", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify(requestBody),
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({
+          username,
+          password,
+          providerId: providerId === "" ? undefined : providerId,
+        }),
       });
 
       const payload = await readJson<ErrorPayload>(response);
@@ -80,7 +74,7 @@ export function AuthSessionPanel({ initialIsAuthenticated }: AuthSessionPanelPro
       setStatusMessage(
         authenticated
           ? "Signed in successfully."
-          : "Sign-in completed but session was not established. Please try again.",
+          : "Sign-in completed but session was not established. Try again.",
       );
       router.refresh();
     } catch {
@@ -110,7 +104,7 @@ export function AuthSessionPanel({ initialIsAuthenticated }: AuthSessionPanelPro
       const authenticated = await refreshAuthState();
       setStatusMessage(
         authenticated
-          ? "Sign-out request sent but session is still active. Please try again."
+          ? "Sign-out sent but session is still active. Try again."
           : "Signed out successfully.",
       );
       router.refresh();
@@ -122,87 +116,166 @@ export function AuthSessionPanel({ initialIsAuthenticated }: AuthSessionPanelPro
   }
 
   return (
-    <section className="flex flex-col gap-5 rounded-3xl border border-foreground/10 bg-background p-5">
-      <header className="flex flex-col gap-2">
-        <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Authentication</h1>
-        <p className="text-sm leading-6 text-foreground/70">
-          Sign in to create a Music Assistant session cookie, or sign out to clear it.
-        </p>
-      </header>
-
-      <div className="rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-4">
-        <p className="text-xs uppercase tracking-[0.14em] text-foreground/60">Session status</p>
-        <p className="mt-2 text-sm font-medium">{isAuthenticated ? "Signed in" : "Signed out"}</p>
+    <div
+      className="flex flex-col gap-5 rounded-2xl p-5"
+      style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h2 className="text-base font-semibold" style={{ color: "var(--foreground)" }}>
+            Sign In
+          </h2>
+          <p className="mt-1 text-sm" style={{ color: "var(--fg-secondary)" }}>
+            Create a Music Assistant session to control playback.
+          </p>
+        </div>
+        <span
+          className="shrink-0 rounded-full px-2.5 py-1 text-xs font-medium"
+          style={{
+            background: isAuthenticated ? "rgba(52,199,89,0.12)" : "var(--bg-elevated)",
+            color: isAuthenticated ? "#34c759" : "var(--fg-secondary)",
+          }}
+        >
+          {isAuthenticated ? "Signed in" : "Signed out"}
+        </span>
       </div>
 
-      <form className="flex flex-col gap-3" onSubmit={handleLogin}>
-        <label className="flex flex-col gap-1 text-sm">
-          Username
+      <form className="flex flex-col gap-4" onSubmit={handleLogin}>
+        <FieldLabel label="Username">
           <input
             name="username"
             value={username}
-            onChange={(event) => setUsername(event.target.value)}
+            onChange={(e) => setUsername(e.target.value)}
             required
             autoComplete="username"
             disabled={isBusy}
-            className="rounded-xl border border-foreground/20 bg-background px-3 py-2 text-sm outline-none transition focus:border-foreground/40 focus:ring-2 focus:ring-foreground/10 disabled:cursor-not-allowed disabled:opacity-60"
+            placeholder="Enter username"
+            className="am-input"
+            style={inputStyle}
           />
-        </label>
+        </FieldLabel>
 
-        <label className="flex flex-col gap-1 text-sm">
-          Password
+        <FieldLabel label="Password">
           <input
             type="password"
             name="password"
             value={password}
-            onChange={(event) => setPassword(event.target.value)}
+            onChange={(e) => setPassword(e.target.value)}
             required
             autoComplete="current-password"
             disabled={isBusy}
-            className="rounded-xl border border-foreground/20 bg-background px-3 py-2 text-sm outline-none transition focus:border-foreground/40 focus:ring-2 focus:ring-foreground/10 disabled:cursor-not-allowed disabled:opacity-60"
+            placeholder="Enter password"
+            className="am-input"
+            style={inputStyle}
           />
-        </label>
+        </FieldLabel>
 
-        <label className="flex flex-col gap-1 text-sm">
-          Provider ID (optional)
+        <FieldLabel label="Provider ID" hint="optional">
           <input
             name="providerId"
             value={providerId}
-            onChange={(event) => setProviderId(event.target.value)}
+            onChange={(e) => setProviderId(e.target.value)}
             disabled={isBusy}
-            className="rounded-xl border border-foreground/20 bg-background px-3 py-2 text-sm outline-none transition focus:border-foreground/40 focus:ring-2 focus:ring-foreground/10 disabled:cursor-not-allowed disabled:opacity-60"
+            placeholder="Leave blank if not required"
+            className="am-input"
+            style={inputStyle}
           />
-        </label>
+        </FieldLabel>
 
-        <div className="flex flex-wrap gap-2 pt-2">
+        <div className="flex flex-wrap gap-2 pt-1">
           <button
             type="submit"
             disabled={isBusy}
-            className="rounded-xl bg-foreground px-4 py-2 text-sm font-semibold text-background transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-full px-5 py-2 text-sm font-semibold am-transition disabled:cursor-not-allowed disabled:opacity-60"
+            style={{ background: "var(--accent)", color: "#ffffff" }}
           >
-            {pendingAction === "login" ? "Signing in..." : "Sign in"}
+            {pendingAction === "login" ? "Signing in…" : "Sign In"}
           </button>
           <button
             type="button"
             onClick={handleLogout}
             disabled={!canSignOut}
-            className="rounded-xl border border-foreground/20 px-4 py-2 text-sm font-semibold transition hover:bg-foreground/5 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-full px-5 py-2 text-sm font-semibold am-transition disabled:cursor-not-allowed disabled:opacity-50"
+            style={{
+              background: "var(--bg-overlay-strong)",
+              color: "var(--foreground)",
+              border: "1px solid var(--border)",
+            }}
           >
-            {pendingAction === "logout" ? "Signing out..." : "Sign out"}
+            {pendingAction === "logout" ? "Signing out…" : "Sign Out"}
           </button>
         </div>
       </form>
 
       {statusMessage ? (
-        <p role="status" aria-live="polite" className="text-sm text-foreground/70">
+        <p
+          role="status"
+          aria-live="polite"
+          className="rounded-xl px-3 py-2 text-sm"
+          style={{
+            background: "rgba(52,199,89,0.08)",
+            border: "1px solid rgba(52,199,89,0.2)",
+            color: "#34c759",
+          }}
+        >
           {statusMessage}
         </p>
       ) : null}
+
       {errorMessage ? (
-        <p role="alert" aria-live="assertive" className="text-sm text-red-600">
+        <p
+          role="alert"
+          aria-live="assertive"
+          className="rounded-xl px-3 py-2 text-sm"
+          style={{
+            background: "rgba(252,60,68,0.08)",
+            border: "1px solid rgba(252,60,68,0.2)",
+            color: "var(--accent)",
+          }}
+        >
           {errorMessage}
         </p>
       ) : null}
-    </section>
+    </div>
+  );
+}
+
+/* ── Helpers ── */
+
+const inputStyle: React.CSSProperties = {
+  width: "100%",
+  background: "var(--bg-elevated)",
+  border: "1px solid var(--border-medium)",
+  borderRadius: "var(--radius-md)",
+  padding: "10px 14px",
+  fontSize: "15px",
+  color: "var(--foreground)",
+  outline: "none",
+  transition: "border-color 150ms ease, box-shadow 150ms ease",
+};
+
+function FieldLabel({
+  label,
+  hint,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="flex flex-col gap-1.5">
+      <span className="flex items-center gap-1.5">
+        <span className="text-sm font-medium" style={{ color: "var(--foreground)" }}>
+          {label}
+        </span>
+        {hint ? (
+          <span className="text-xs" style={{ color: "var(--fg-tertiary)" }}>
+            {hint}
+          </span>
+        ) : null}
+      </span>
+      {children}
+    </label>
   );
 }

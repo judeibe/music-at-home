@@ -81,106 +81,153 @@ export function PlayersList() {
     if (isLoading) {
       return (
         <div
-          className="rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-4"
+          className="rounded-2xl px-4 py-8 text-center text-sm"
+          style={{ background: "var(--bg-surface)", border: "1px solid var(--border)", color: "var(--fg-secondary)" }}
           role="status"
           aria-live="polite"
         >
-          <p className="text-sm text-foreground/70">Loading players…</p>
+          Loading players…
         </div>
       );
     }
 
     if (players.length === 0) {
       return (
-        <div className="rounded-2xl border border-dashed border-foreground/20 p-4">
-          <p className="text-sm text-foreground/70">No players found.</p>
-        </div>
+        <p
+          className="rounded-2xl px-4 py-8 text-center text-sm"
+          style={{
+            background: "var(--bg-surface)",
+            border: "1px dashed var(--border-medium)",
+            color: "var(--fg-secondary)",
+          }}
+        >
+          No players found.
+        </p>
       );
     }
 
     return (
-      <ul className="flex flex-col gap-3">
-        {players.map((player) => {
+      <div
+        className="overflow-hidden rounded-2xl"
+        style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}
+      >
+        {players.map((player, idx) => {
           const isBusy = activeCommand?.playerId === player.player_id;
           const isPlaying = player.playback_state === "playing";
           const supportsPause = player.supported_features?.includes("pause") ?? false;
-          const supportsNextPrevious =
-            player.supported_features?.includes("next_previous") ?? false;
+          const supportsNextPrevious = player.supported_features?.includes("next_previous") ?? false;
 
           return (
-            <li
+            <div
               key={player.player_id}
-              className="flex flex-col gap-3 rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-4"
+              className="flex flex-col gap-3 px-4 py-4"
+              style={{ borderTop: idx > 0 ? "1px solid var(--border)" : "none" }}
             >
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex flex-col gap-1">
-                  <p className="text-sm font-semibold">{player.name}</p>
-                  <p className="text-xs uppercase tracking-[0.12em] text-foreground/60">
-                    {player.available ? formatPlaybackState(player.playback_state) : "unavailable"}
+              {/* Player header */}
+              <div className="flex items-center gap-3">
+                <div
+                  className="flex size-10 shrink-0 items-center justify-center rounded-xl"
+                  style={{
+                    background: player.available
+                      ? "linear-gradient(135deg, var(--accent) 0%, #ff8a80 100%)"
+                      : "var(--bg-elevated)",
+                  }}
+                  aria-hidden="true"
+                >
+                  <svg viewBox="0 0 16 16" fill="white" style={{ width: 14, height: 14, opacity: player.available ? 0.9 : 0.4 }}>
+                    <path d="M6.3 2.841A1.5 1.5 0 0 0 4 4.11v7.78a1.5 1.5 0 0 0 2.3 1.269l5.344-3.89a1.5 1.5 0 0 0 0-2.538L6.3 2.84Z" />
+                  </svg>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>
+                    {player.name}
+                  </p>
+                  <p className="text-xs" style={{ color: "var(--fg-secondary)" }}>
+                    {player.available ? formatPlaybackState(player.playback_state) : "Unavailable"}
+                    {player.current_media?.title ? ` · ${player.current_media.title}` : ""}
+                    {player.current_media?.artist ? ` — ${player.current_media.artist}` : ""}
                   </p>
                 </div>
-                <p className="text-xs text-foreground/70">{player.player_id}</p>
+                {/* Availability dot */}
+                <div
+                  className="size-2 shrink-0 rounded-full"
+                  style={{ background: player.available ? "#34c759" : "var(--fg-tertiary)" }}
+                  aria-label={player.available ? "Available" : "Unavailable"}
+                />
               </div>
 
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
+              {/* Transport controls */}
+              <div className="flex items-center gap-2 pl-[52px]">
+                <SmallTransportButton
                   aria-label="Previous track"
-                  className="rounded-lg border border-foreground/15 px-3 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-50"
                   disabled={!player.available || isBusy || !supportsNextPrevious}
                   onClick={() => void runTransportCommand(player.player_id, "previous")}
                 >
-                  Previous
-                </button>
+                  <svg viewBox="0 0 16 16" fill="currentColor" style={{ width: 14, height: 14 }}>
+                    <path d="M6.3 2.841A1.5 1.5 0 0 0 4 4.11v7.78a1.5 1.5 0 0 0 2.3 1.269l4.344-3.16a1.5 1.5 0 0 0 0-2.538L6.3 2.84ZM13 3.25a.75.75 0 0 0-1.5 0v9.5a.75.75 0 0 0 1.5 0V3.25Z" />
+                  </svg>
+                </SmallTransportButton>
+
                 <button
                   type="button"
-                  aria-label={isPlaying ? "Pause playback" : "Play playback"}
-                  className="rounded-lg border border-foreground/15 px-3 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+                  aria-label={isPlaying ? "Pause" : "Play"}
                   disabled={!player.available || isBusy || !supportsPause}
-                  onClick={() =>
-                    void runTransportCommand(player.player_id, isPlaying ? "pause" : "play")
-                  }
+                  className="flex size-8 items-center justify-center rounded-full am-transition disabled:cursor-not-allowed disabled:opacity-40"
+                  style={{ background: "var(--accent)", color: "#fff" }}
                 >
-                  {isPlaying ? "Pause" : "Play"}
+                  {isPlaying ? (
+                    <svg viewBox="0 0 16 16" fill="currentColor" style={{ width: 12, height: 12 }} onClick={() => void runTransportCommand(player.player_id, "pause")}>
+                      <path d="M4.5 2.5a.5.5 0 0 0-.5.5v10a.5.5 0 0 0 .5.5h2a.5.5 0 0 0 .5-.5V3a.5.5 0 0 0-.5-.5h-2ZM9.5 2.5a.5.5 0 0 0-.5.5v10a.5.5 0 0 0 .5.5h2a.5.5 0 0 0 .5-.5V3a.5.5 0 0 0-.5-.5h-2Z" />
+                    </svg>
+                  ) : (
+                    <svg viewBox="0 0 16 16" fill="currentColor" style={{ width: 12, height: 12 }} onClick={() => void runTransportCommand(player.player_id, "play")}>
+                      <path d="M5.3 2.841A1.5 1.5 0 0 0 3 4.11v7.78a1.5 1.5 0 0 0 2.3 1.269l7.344-3.89a1.5 1.5 0 0 0 0-2.538L5.3 2.84Z" />
+                    </svg>
+                  )}
                 </button>
-                <button
-                  type="button"
+
+                <SmallTransportButton
                   aria-label="Next track"
-                  className="rounded-lg border border-foreground/15 px-3 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-50"
                   disabled={!player.available || isBusy || !supportsNextPrevious}
                   onClick={() => void runTransportCommand(player.player_id, "next")}
                 >
-                  Next
-                </button>
+                  <svg viewBox="0 0 16 16" fill="currentColor" style={{ width: 14, height: 14 }}>
+                    <path d="M2.5 3.25a.75.75 0 0 1 1.5 0v9.5a.75.75 0 0 1-1.5 0V3.25ZM9.7 2.841A1.5 1.5 0 0 1 12 4.11v7.78a1.5 1.5 0 0 1-2.3 1.269L5.356 9.3a1.5 1.5 0 0 1 0-2.538L9.7 2.84Z" />
+                  </svg>
+                </SmallTransportButton>
+
                 {isBusy ? (
-                  <p className="text-xs text-foreground/70">Sending command…</p>
+                  <span className="text-xs" style={{ color: "var(--fg-tertiary)" }}>
+                    …
+                  </span>
                 ) : null}
               </div>
-
-              <p className="text-xs text-foreground/70">
-                {player.current_media?.title
-                  ? `${player.current_media.title}${player.current_media.artist ? ` — ${player.current_media.artist}` : ""}`
-                  : "No media information"}
-              </p>
-            </li>
+            </div>
           );
         })}
-      </ul>
+      </div>
     );
   };
 
   return (
-    <section className="flex flex-col gap-4 rounded-3xl border border-foreground/10 bg-background p-5">
-      <header className="flex flex-wrap items-start justify-between gap-2">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Players</h1>
-          <p className="text-sm text-foreground/70">
-            Control playback for connected players through the shared Music Assistant session.
+    <div className="flex flex-col gap-6">
+      <header className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight" style={{ color: "var(--foreground)" }}>
+            Players
+          </h1>
+          <p className="mt-1 text-sm" style={{ color: "var(--fg-secondary)" }}>
+            Control playback on connected Music Assistant players.
           </p>
         </div>
         <button
           type="button"
-          className="rounded-lg border border-foreground/15 px-3 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+          className="shrink-0 rounded-full px-4 py-2 text-sm font-medium am-transition disabled:cursor-not-allowed disabled:opacity-50"
+          style={{
+            background: "var(--bg-surface)",
+            border: "1px solid var(--border)",
+            color: "var(--foreground)",
+          }}
           disabled={isLoading || activeCommand !== null}
           onClick={() => void handleManualRefresh()}
         >
@@ -190,14 +237,43 @@ export function PlayersList() {
 
       {errorMessage ? (
         <div
-          className="rounded-2xl border border-foreground/20 bg-foreground/[0.04] p-3"
+          className="rounded-xl px-4 py-3 text-sm"
+          style={{
+            background: "rgba(252,60,68,0.08)",
+            border: "1px solid rgba(252,60,68,0.2)",
+            color: "var(--accent)",
+          }}
           role="alert"
         >
-          <p className="text-sm text-foreground/80">{errorMessage}</p>
+          {errorMessage}
         </div>
       ) : null}
 
       {renderPlayersContent()}
-    </section>
+    </div>
+  );
+}
+
+function SmallTransportButton({
+  children,
+  ...props
+}: React.ButtonHTMLAttributes<HTMLButtonElement> & { children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      {...props}
+      className="flex size-7 items-center justify-center rounded-full am-transition disabled:cursor-not-allowed disabled:opacity-40"
+      style={{ color: "var(--fg-secondary)", background: "transparent" }}
+      onMouseEnter={(e) => {
+        (e.currentTarget as HTMLButtonElement).style.background = "var(--bg-overlay-strong)";
+        (e.currentTarget as HTMLButtonElement).style.color = "var(--foreground)";
+      }}
+      onMouseLeave={(e) => {
+        (e.currentTarget as HTMLButtonElement).style.background = "transparent";
+        (e.currentTarget as HTMLButtonElement).style.color = "var(--fg-secondary)";
+      }}
+    >
+      {children}
+    </button>
   );
 }

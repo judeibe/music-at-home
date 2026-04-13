@@ -34,10 +34,7 @@ function getRecentPlayback(players: MusicAssistantPlayer[]): RecentPlaybackItem[
     .map((player) => {
       const media = player.current_media;
       const title = media?.title?.trim();
-      if (!title) {
-        return null;
-      }
-
+      if (!title) return null;
       return {
         playerId: player.player_id,
         playerName: player.name,
@@ -51,42 +48,54 @@ function getRecentPlayback(players: MusicAssistantPlayer[]): RecentPlaybackItem[
     .slice(0, 5);
 }
 
-function formatSystemStatusLabel(params: {
-  isAuthenticated: boolean;
-  hasDataError: boolean;
-  hasSystemError: boolean;
-}): string {
-  if (!params.isAuthenticated) {
-    return "Authentication required";
-  }
-
-  if (params.hasDataError || params.hasSystemError) {
-    return "Attention needed";
-  }
-
-  return "Healthy";
-}
-
 const quickActions = [
   {
     href: "/players",
-    title: "Player controls",
+    label: "Players",
     description: "Play, pause, and skip on active endpoints.",
+    gradient: "linear-gradient(135deg, #fc3c44 0%, #ff6b6b 100%)",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="white" style={{ width: 24, height: 24 }}>
+        <path d="M8 5.14v13.72a1 1 0 0 0 1.5.866l11-6.86a1 1 0 0 0 0-1.732l-11-6.86A1 1 0 0 0 8 5.14Z" />
+      </svg>
+    ),
   },
   {
     href: "/rooms",
-    title: "Room groups",
-    description: "Start or adjust synchronized multi-room playback.",
+    label: "Rooms",
+    description: "Synchronized multi-room playback.",
+    gradient: "linear-gradient(135deg, #5856d6 0%, #af52de 100%)",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="white" style={{ width: 24, height: 24 }}>
+        <path
+          fillRule="evenodd"
+          d="M2 5.25A3.25 3.25 0 0 1 5.25 2h13.5A3.25 3.25 0 0 1 22 5.25v10.5A3.25 3.25 0 0 1 18.75 19h-4.257a4.5 4.5 0 0 1 1.379 2.115.75.75 0 0 1-.722.885H8.85a.75.75 0 0 1-.722-.885A4.5 4.5 0 0 1 9.507 19H5.25A3.25 3.25 0 0 1 2 15.75V5.25Zm1.5 0A1.75 1.75 0 0 1 5.25 3.5h13.5A1.75 1.75 0 0 1 20.5 5.25v9.5a1.75 1.75 0 0 1-1.75 1.75H5.25a1.75 1.75 0 0 1-1.75-1.75v-9.5Z"
+          clipRule="evenodd"
+        />
+      </svg>
+    ),
   },
   {
     href: "/devices",
-    title: "Device operations",
+    label: "Devices",
     description: "Manage power, volume, and mute states.",
+    gradient: "linear-gradient(135deg, #007aff 0%, #34aadc 100%)",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="white" style={{ width: 24, height: 24 }}>
+        <path d="M10 3.5A1.5 1.5 0 0 1 11.5 2h1A1.5 1.5 0 0 1 14 3.5V5h2A1.5 1.5 0 0 1 17.5 6.5v13A1.5 1.5 0 0 1 16 21H8a1.5 1.5 0 0 1-1.5-1.5v-13A1.5 1.5 0 0 1 8 5h2V3.5ZM12 16a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z" />
+      </svg>
+    ),
   },
   {
     href: "/library",
-    title: "Browse library",
-    description: "Queue albums, artists, and playlists fast.",
+    label: "Library",
+    description: "Queue albums, artists, and playlists.",
+    gradient: "linear-gradient(135deg, #34c759 0%, #30d158 100%)",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="white" style={{ width: 24, height: 24 }}>
+        <path d="M3 5.5A2.5 2.5 0 0 1 5.5 3h13A2.5 2.5 0 0 1 21 5.5v13a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 18.5v-13ZM11 7.25a.75.75 0 0 0-1.5 0v9.5a.75.75 0 0 0 1.5 0v-9.5Zm3.75.75a.75.75 0 0 1 .75.75v7.5a.75.75 0 0 1-1.5 0V8.75a.75.75 0 0 1 .75-.75ZM8.25 9.5a.75.75 0 0 0-1.5 0v5a.75.75 0 0 0 1.5 0v-5Z" />
+      </svg>
+    ),
   },
 ];
 
@@ -105,24 +114,17 @@ export default async function HomePage() {
     try {
       const [playersResult, queuesResult] = await Promise.all([
         withMusicAssistantAuth(() =>
-          executeAuthenticatedMusicAssistantCommand({
-            command: "players/all",
-            args: {},
-          }),
+          executeAuthenticatedMusicAssistantCommand({ command: "players/all", args: {} }),
         ),
         withMusicAssistantAuth(() =>
-          executeAuthenticatedMusicAssistantCommand({
-            command: "player_queues/all",
-            args: {},
-          }),
+          executeAuthenticatedMusicAssistantCommand({ command: "player_queues/all", args: {} }),
         ),
       ]);
-
       players = normalizePlayers(playersResult);
       queues = normalizeQueues(queuesResult);
     } catch (error) {
       if (error instanceof MusicAssistantApiError && error.status === 401) {
-        dataErrorMessage = "Your Music Assistant session expired. Sign in again on the auth route.";
+        dataErrorMessage = "Session expired — sign in again on the Account page.";
       } else if (error instanceof Error) {
         dataErrorMessage = error.message;
       } else {
@@ -134,156 +136,305 @@ export default async function HomePage() {
   try {
     serverInfo = await serverInfoPromise;
   } catch (error) {
-    if (error instanceof Error) {
-      systemErrorMessage = error.message;
-    } else {
-      systemErrorMessage = "Unable to reach Music Assistant server info endpoint.";
-    }
+    systemErrorMessage =
+      error instanceof Error ? error.message : "Cannot reach Music Assistant server.";
   }
 
   const recentPlayback = getRecentPlayback(players);
   const activeRooms = players.filter(
-    (player) => Array.isArray(player.group_childs) && player.group_childs.length > 0,
+    (p) => Array.isArray(p.group_childs) && p.group_childs.length > 0,
   );
-  const onlinePlayers = players.filter((player) => player.available).length;
-  const systemStatusLabel = formatSystemStatusLabel({
-    isAuthenticated,
-    hasDataError: dataErrorMessage !== null,
-    hasSystemError: systemErrorMessage !== null,
-  });
+  const onlinePlayers = players.filter((p) => p.available).length;
 
   return (
-    <section className="flex flex-col gap-5 rounded-3xl border border-foreground/10 bg-background p-5">
-      <header className="flex flex-col gap-2">
-        <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Home dashboard</h1>
-        <p className="text-sm leading-6 text-foreground/70">
-          Monitor active playback, jump to control surfaces, and check system readiness.
+    <div className="flex flex-col gap-8">
+      {/* ── Page header ── */}
+      <header>
+        <h1 className="text-2xl font-bold tracking-tight" style={{ color: "var(--foreground)" }}>
+          Good{" "}
+          {new Date().getHours() < 12
+            ? "morning"
+            : new Date().getHours() < 18
+              ? "afternoon"
+              : "evening"}
+        </h1>
+        <p className="mt-1 text-sm" style={{ color: "var(--fg-secondary)" }}>
+          {serverInfo
+            ? `Music Assistant ${serverInfo.server_version} · Schema ${serverInfo.schema_version}`
+            : "Connecting to Music Assistant…"}
         </p>
       </header>
 
-      <div className="grid gap-3 md:grid-cols-3">
-        <article className="rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-4">
-          <p className="text-xs uppercase tracking-[0.14em] text-foreground/60">System status</p>
-          <p className="mt-2 text-sm font-medium">{systemStatusLabel}</p>
-          <p className="mt-1 text-xs text-foreground/70">
-            Session: {isAuthenticated ? "Signed in" : "Signed out"}
-          </p>
-        </article>
-        <article className="rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-4">
-          <p className="text-xs uppercase tracking-[0.14em] text-foreground/60">Players online</p>
-          <p className="mt-2 text-sm font-medium">{onlinePlayers}</p>
-          <p className="mt-1 text-xs text-foreground/70">
-            {players.length} total players, {queues.length} queues tracked
-          </p>
-        </article>
-        <article className="rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-4">
-          <p className="text-xs uppercase tracking-[0.14em] text-foreground/60">Server version</p>
-          <p className="mt-2 text-sm font-medium">{serverInfo?.server_version ?? "Unavailable"}</p>
-          <p className="mt-1 text-xs text-foreground/70">
-            Schema {serverInfo?.schema_version ?? "unknown"}
-          </p>
-        </article>
-      </div>
-
-      {dataErrorMessage ? (
-        <p role="alert" className="rounded-xl border border-foreground/20 bg-foreground/[0.04] p-3 text-sm">
-          {dataErrorMessage}
-        </p>
-      ) : null}
-      {systemErrorMessage ? (
-        <p role="alert" className="rounded-xl border border-foreground/20 bg-foreground/[0.04] p-3 text-sm">
-          {systemErrorMessage}
-        </p>
+      {/* ── Errors ── */}
+      {(dataErrorMessage ?? systemErrorMessage) ? (
+        <div
+          className="rounded-xl px-4 py-3 text-sm"
+          style={{
+            background: "rgba(252,60,68,0.08)",
+            border: "1px solid rgba(252,60,68,0.2)",
+            color: "var(--accent)",
+          }}
+          role="alert"
+        >
+          {dataErrorMessage ?? systemErrorMessage}
+        </div>
       ) : null}
 
-      {!isAuthenticated ? (
-        <section className="rounded-2xl border border-dashed border-foreground/20 p-4">
-          <h2 className="text-sm font-semibold">Sign in to load live playback data</h2>
-          <p className="mt-2 text-sm text-foreground/70">
-            Authenticate on the auth route to unlock player, room, and queue telemetry on this
-            dashboard.
-          </p>
+      {/* ── Stats ── */}
+      {isAuthenticated ? (
+        <div className="grid grid-cols-3 gap-3">
+          <StatCard
+            label="Players online"
+            value={String(onlinePlayers)}
+            detail={`${players.length} total`}
+          />
+          <StatCard
+            label="Active rooms"
+            value={String(activeRooms.length)}
+            detail={`${queues.length} queues`}
+          />
+          <StatCard
+            label="Session"
+            value="Active"
+            detail="Signed in"
+            accentValue
+          />
+        </div>
+      ) : (
+        <div
+          className="flex flex-col gap-3 rounded-2xl p-5"
+          style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}
+        >
+          <div className="flex flex-col gap-1">
+            <p className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>
+              Sign in to see live playback data
+            </p>
+            <p className="text-sm" style={{ color: "var(--fg-secondary)" }}>
+              Authenticate to unlock player controls, room groups, and queue telemetry.
+            </p>
+          </div>
           <Link
             href="/auth"
-            className="mt-3 inline-flex rounded-xl border border-foreground/20 px-3 py-1.5 text-sm font-medium transition hover:bg-foreground/5"
+            className="inline-flex self-start rounded-full px-4 py-2 text-sm font-semibold am-transition"
+            style={{ background: "var(--accent)", color: "#ffffff" }}
           >
-            Go to auth
+            Go to Account
           </Link>
-        </section>
-      ) : (
-        <div className="grid gap-4 lg:grid-cols-[1.2fr_1fr]">
-          <section aria-labelledby="recent-playback-heading" className="flex flex-col gap-3">
-            <h2 id="recent-playback-heading" className="text-sm font-semibold uppercase tracking-[0.12em]">
-              Recent playback
-            </h2>
-            {recentPlayback.length > 0 ? (
-              <ol className="flex flex-col gap-2">
-                {recentPlayback.map((item) => (
-                  <li
-                    key={`${item.playerId}:${item.title}`}
-                    className="rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-3"
-                  >
-                    <p className="text-sm font-medium">{item.title}</p>
-                    <p className="text-xs text-foreground/70">
-                      {item.artist ? `${item.artist} · ` : ""}
-                      {item.playerName}
-                    </p>
-                  </li>
-                ))}
-              </ol>
-            ) : (
-              <p className="rounded-2xl border border-dashed border-foreground/20 p-3 text-sm text-foreground/70">
-                No recent playback metadata is available yet.
-              </p>
-            )}
-          </section>
-
-          <section aria-labelledby="active-rooms-heading" className="flex flex-col gap-3">
-            <h2 id="active-rooms-heading" className="text-sm font-semibold uppercase tracking-[0.12em]">
-              Active rooms
-            </h2>
-            <p className="text-sm text-foreground/70">{activeRooms.length} active room groups</p>
-            {activeRooms.length > 0 ? (
-              <ul className="flex flex-col gap-2">
-                {activeRooms.map((room) => (
-                  <li
-                    key={room.player_id}
-                    className="rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-3"
-                  >
-                    <p className="text-sm font-medium">{room.name}</p>
-                    <p className="text-xs text-foreground/70">
-                      {(room.group_childs?.length ?? 0) + 1} members ·{" "}
-                      {room.playback_state ?? "unknown"}
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="rounded-2xl border border-dashed border-foreground/20 p-3 text-sm text-foreground/70">
-                No synchronized rooms are active.
-              </p>
-            )}
-          </section>
         </div>
       )}
 
-      <section aria-labelledby="quick-actions-heading" className="flex flex-col gap-3">
-        <h2 id="quick-actions-heading" className="text-sm font-semibold uppercase tracking-[0.12em]">
-          Quick actions
+      {/* ── Quick actions ── */}
+      <section aria-labelledby="quick-actions-heading">
+        <h2
+          id="quick-actions-heading"
+          className="mb-4 text-[11px] font-semibold uppercase tracking-[0.1em]"
+          style={{ color: "var(--fg-secondary)" }}
+        >
+          Quick Actions
         </h2>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {quickActions.map((action) => (
             <Link
               key={action.href}
               href={action.href}
-              className="flex flex-col gap-1 rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-4 transition hover:bg-foreground/[0.05]"
+              className="group flex flex-col gap-3 rounded-2xl p-4 am-transition"
+              style={{
+                background: "var(--bg-surface)",
+                border: "1px solid var(--border)",
+                boxShadow: "var(--shadow-xs)",
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLAnchorElement).style.boxShadow = "var(--shadow-md)";
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLAnchorElement).style.boxShadow = "var(--shadow-xs)";
+              }}
             >
-              <span className="text-sm font-semibold">{action.title}</span>
-              <span className="text-xs text-foreground/70">{action.description}</span>
+              <div
+                className="flex size-10 items-center justify-center rounded-xl"
+                style={{ background: action.gradient }}
+              >
+                {action.icon}
+              </div>
+              <div>
+                <p className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>
+                  {action.label}
+                </p>
+                <p className="mt-0.5 text-xs leading-snug" style={{ color: "var(--fg-secondary)" }}>
+                  {action.description}
+                </p>
+              </div>
             </Link>
           ))}
         </div>
       </section>
-    </section>
+
+      {/* ── Recent playback (authenticated only) ── */}
+      {isAuthenticated ? (
+        <div className="grid gap-6 lg:grid-cols-2">
+          <section aria-labelledby="recent-heading">
+            <h2
+              id="recent-heading"
+              className="mb-4 text-[11px] font-semibold uppercase tracking-[0.1em]"
+              style={{ color: "var(--fg-secondary)" }}
+            >
+              Recently Played
+            </h2>
+            {recentPlayback.length > 0 ? (
+              <div
+                className="overflow-hidden rounded-2xl"
+                style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}
+              >
+                {recentPlayback.map((item, idx) => (
+                  <div
+                    key={`${item.playerId}:${item.title}`}
+                    className="flex items-center gap-3 px-4 py-3"
+                    style={{
+                      borderTop: idx > 0 ? "1px solid var(--border)" : "none",
+                    }}
+                  >
+                    <div
+                      className="flex size-9 shrink-0 items-center justify-center rounded-lg"
+                      style={{
+                        background: "linear-gradient(135deg, var(--accent) 0%, #ff8a80 100%)",
+                      }}
+                      aria-hidden="true"
+                    >
+                      <svg
+                        viewBox="0 0 16 16"
+                        fill="white"
+                        style={{ width: 12, height: 12, opacity: 0.9 }}
+                      >
+                        <path d="M6.3 2.841A1.5 1.5 0 0 0 4 4.11v7.78a1.5 1.5 0 0 0 2.3 1.269l5.344-3.89a1.5 1.5 0 0 0 0-2.538L6.3 2.84Z" />
+                      </svg>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p
+                        className="truncate text-sm font-medium"
+                        style={{ color: "var(--foreground)" }}
+                      >
+                        {item.title}
+                      </p>
+                      <p className="truncate text-xs" style={{ color: "var(--fg-secondary)" }}>
+                        {item.artist ? `${item.artist} · ` : ""}
+                        {item.playerName}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p
+                className="rounded-2xl px-4 py-5 text-sm"
+                style={{
+                  background: "var(--bg-surface)",
+                  border: "1px dashed var(--border-medium)",
+                  color: "var(--fg-secondary)",
+                }}
+              >
+                No recent playback yet.
+              </p>
+            )}
+          </section>
+
+          <section aria-labelledby="rooms-heading">
+            <h2
+              id="rooms-heading"
+              className="mb-4 text-[11px] font-semibold uppercase tracking-[0.1em]"
+              style={{ color: "var(--fg-secondary)" }}
+            >
+              Active Rooms
+            </h2>
+            {activeRooms.length > 0 ? (
+              <div
+                className="overflow-hidden rounded-2xl"
+                style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}
+              >
+                {activeRooms.map((room, idx) => (
+                  <div
+                    key={room.player_id}
+                    className="flex items-center gap-3 px-4 py-3"
+                    style={{ borderTop: idx > 0 ? "1px solid var(--border)" : "none" }}
+                  >
+                    <div
+                      className="flex size-9 shrink-0 items-center justify-center rounded-lg"
+                      style={{
+                        background: "linear-gradient(135deg, #5856d6 0%, #af52de 100%)",
+                      }}
+                      aria-hidden="true"
+                    >
+                      <svg
+                        viewBox="0 0 16 16"
+                        fill="white"
+                        style={{ width: 14, height: 14, opacity: 0.9 }}
+                      >
+                        <path d="M2 3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3Zm0 9.5a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5Z" />
+                      </svg>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p
+                        className="truncate text-sm font-medium"
+                        style={{ color: "var(--foreground)" }}
+                      >
+                        {room.name}
+                      </p>
+                      <p className="truncate text-xs" style={{ color: "var(--fg-secondary)" }}>
+                        {(room.group_childs?.length ?? 0) + 1} members ·{" "}
+                        {room.playback_state ?? "unknown"}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p
+                className="rounded-2xl px-4 py-5 text-sm"
+                style={{
+                  background: "var(--bg-surface)",
+                  border: "1px dashed var(--border-medium)",
+                  color: "var(--fg-secondary)",
+                }}
+              >
+                No synchronized room groups active.
+              </p>
+            )}
+          </section>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+/* ── Stat card ── */
+
+function StatCard({
+  label,
+  value,
+  detail,
+  accentValue = false,
+}: {
+  label: string;
+  value: string;
+  detail: string;
+  accentValue?: boolean;
+}) {
+  return (
+    <div
+      className="flex flex-col gap-1 rounded-2xl p-4"
+      style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}
+    >
+      <p className="text-[11px] font-medium uppercase tracking-[0.08em]" style={{ color: "var(--fg-secondary)" }}>
+        {label}
+      </p>
+      <p
+        className="text-2xl font-bold tracking-tight"
+        style={{ color: accentValue ? "var(--accent)" : "var(--foreground)" }}
+      >
+        {value}
+      </p>
+      <p className="text-xs" style={{ color: "var(--fg-tertiary)" }}>
+        {detail}
+      </p>
+    </div>
   );
 }

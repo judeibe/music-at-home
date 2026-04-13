@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { appNavItems } from "../_lib/navigation";
+import { appNavGroups, mobileNavItems } from "../_lib/navigation";
+import { NavIcon } from "./nav-icon";
 
 type AppNavProps = {
   isAuthenticated?: boolean;
@@ -10,79 +11,96 @@ type AppNavProps = {
 
 export function AppNav({ isAuthenticated = false }: AppNavProps) {
   const pathname = usePathname();
-  const authStatusLabel = isAuthenticated ? "Signed in" : "Signed out";
 
   return (
     <>
+      {/* ── Desktop sidebar nav ── */}
       <nav
         aria-label="Primary navigation desktop"
-        className="hidden flex-col gap-2 md:flex"
+        className="hidden flex-col gap-1 py-2 md:flex"
       >
-        <p
-          role="status"
-          aria-live="polite"
-          className="px-3 text-xs uppercase tracking-[0.14em] text-foreground/60"
-        >
-          Session: {authStatusLabel}
-        </p>
-        {appNavItems.map((item) => {
-          const isActive = pathname === item.href;
-          const isAuthRoute = item.href === "/auth";
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              aria-current={isActive ? "page" : undefined}
-              className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-colors ${
-                isActive ? "bg-foreground/10" : "hover:bg-foreground/5"
-              }`}
-            >
-              <span aria-hidden="true" className="text-base leading-none">
-                {item.symbol}
-              </span>
-              <span>{item.label}</span>
-              {isAuthRoute ? (
-                <span className="ml-auto rounded-full border border-foreground/15 px-2 py-0.5 text-[10px] uppercase tracking-[0.08em] text-foreground/70">
-                  {isAuthenticated ? "On" : "Off"}
-                </span>
-              ) : null}
-            </Link>
-          );
-        })}
+        {appNavGroups.map((group) => (
+          <div key={group.id} className="flex flex-col gap-0.5">
+            {group.label ? (
+              <p
+                className="px-3 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-[0.12em]"
+                style={{ color: "var(--fg-tertiary)" }}
+              >
+                {group.label}
+              </p>
+            ) : null}
+            {group.items.map((item) => {
+              const isActive = pathname === item.href;
+              const isAuthItem = item.href === "/auth";
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  aria-current={isActive ? "page" : undefined}
+                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium am-transition"
+                  style={{
+                    color: isActive ? "var(--accent)" : "var(--foreground)",
+                    background: isActive ? "var(--accent-muted)" : "transparent",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isActive) {
+                      (e.currentTarget as HTMLAnchorElement).style.background =
+                        "var(--bg-overlay-strong)";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isActive) {
+                      (e.currentTarget as HTMLAnchorElement).style.background = "transparent";
+                    }
+                  }}
+                >
+                  <NavIcon symbol={item.symbol} className="size-4 shrink-0" />
+                  <span className="flex-1 truncate">{item.label}</span>
+                  {isAuthItem ? (
+                    <span
+                      className="shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium"
+                      style={{
+                        background: isAuthenticated
+                          ? "rgba(52, 199, 89, 0.15)"
+                          : "var(--bg-overlay-strong)",
+                        color: isAuthenticated ? "#34c759" : "var(--fg-secondary)",
+                      }}
+                    >
+                      {isAuthenticated ? "On" : "Off"}
+                    </span>
+                  ) : null}
+                </Link>
+              );
+            })}
+          </div>
+        ))}
       </nav>
+
+      {/* ── Mobile bottom tab nav ── */}
       <nav
         aria-label="Primary navigation mobile"
-        className="fixed inset-x-0 bottom-0 border-t border-foreground/10 bg-background/95 px-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] pt-2 backdrop-blur md:hidden"
+        className="border-t backdrop-blur-md md:hidden"
+        style={{
+          background: "color-mix(in srgb, var(--bg-sidebar) 92%, transparent)",
+          borderColor: "var(--border)",
+          paddingBottom: "env(safe-area-inset-bottom)",
+        }}
       >
-        <p
-          role="status"
-          aria-live="polite"
-          className="pb-2 text-center text-[10px] uppercase tracking-[0.16em] text-foreground/60"
-        >
-          Session: {authStatusLabel}
-        </p>
-        <div className="mx-auto flex max-w-3xl items-center gap-1 overflow-x-auto">
-          {appNavItems.map((item) => {
+        <div className="flex items-stretch">
+          {mobileNavItems.map((item) => {
             const isActive = pathname === item.href;
-            const isAuthRoute = item.href === "/auth";
             return (
               <Link
                 key={item.href}
                 href={item.href}
                 aria-current={isActive ? "page" : undefined}
-                className={`flex min-w-16 shrink-0 flex-col items-center gap-1 rounded-lg px-2 py-1 text-[11px] leading-none ${
-                  isActive ? "bg-foreground/10 font-semibold" : "text-foreground/70"
-                }`}
+                className="flex flex-1 flex-col items-center gap-1 py-2 text-[10px] font-medium leading-none am-transition"
+                style={{
+                  color: isActive ? "var(--accent)" : "var(--fg-secondary)",
+                }}
               >
-                <span aria-hidden="true" className="text-base leading-none">
-                  {item.symbol}
-                </span>
-                <span className="truncate">{item.label}</span>
-                {isAuthRoute ? (
-                  <span className="text-[9px] uppercase tracking-[0.08em] text-foreground/60">
-                    {isAuthenticated ? "On" : "Off"}
-                  </span>
-                ) : null}
+                <NavIcon symbol={item.symbol} className="size-[22px]" />
+                <span>{item.label}</span>
               </Link>
             );
           })}
