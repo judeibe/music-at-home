@@ -1,16 +1,16 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 
 import {
   executeMusicAssistantCommand,
   MusicAssistantCommandError,
 } from "@/lib/music-assistant/browser";
-import type { MusicAssistantPlayer } from "@/lib/music-assistant/types";
 import {
-  requestNowPlayingRefresh,
-  setNowPlayingPreferredPlayer,
-} from "../../_lib/now-playing";
+  runWithRealtimeMutation,
+  useRealtimeSnapshot,
+} from "../../_lib/realtime-state";
+import { setNowPlayingPreferredPlayer } from "../../_lib/now-playing";
 
 type TransportCommand = "play" | "pause" | "next" | "previous";
 
@@ -27,71 +27,55 @@ function formatPlaybackState(state: string | undefined): string {
 }
 
 export function PlayersList() {
-  const [players, setPlayers] = useState<MusicAssistantPlayer[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const { state, refresh } = useRealtimeSnapshot();
+  const [actionErrorMessage, setActionErrorMessage] = useState<string | null>(null);
   const [activeCommand, setActiveCommand] = useState<ActiveCommand | null>(null);
-
-  const loadPlayers = useCallback(async (options?: { background?: boolean }) => {
-    const isBackgroundLoad = options?.background ?? false;
-    if (!isBackgroundLoad) {
-      setIsLoading(true);
-    }
-
-    try {
-      const result = await executeMusicAssistantCommand<MusicAssistantPlayer[]>({
-        command: "players/all",
-        args: {},
-      });
-
-      setPlayers(Array.isArray(result) ? result : []);
-      setErrorMessage(null);
-    } catch (error) {
-      if (error instanceof MusicAssistantCommandError) {
-        setErrorMessage(error.message);
-      } else {
-        setErrorMessage("Unexpected error while loading players.");
-      }
-    } finally {
-      if (!isBackgroundLoad) {
-        setIsLoading(false);
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    void loadPlayers();
-  }, [loadPlayers]);
+  const players = state.players;
+  const isLoading = state.status === "idle" || state.status === "loading";
+  const errorMessage = actionErrorMessage ?? state.errorMessage;
 
   const runTransportCommand = useCallback(
     async (playerId: string, command: TransportCommand) => {
       setActiveCommand({ playerId, command });
-      setErrorMessage(null);
+      setActionErrorMessage(null);
       setNowPlayingPreferredPlayer(playerId);
 
       try {
-        await executeMusicAssistantCommand({
-          command: `players/cmd/${command}`,
-          args: {
-            player_id: playerId,
-          },
-        });
-        await Promise.all([
-          loadPlayers({ background: true }),
-          requestNowPlayingRefresh({ playerId }),
-        ]);
+        await runWithRealtimeMutation(
+          async () =>
+            executeMusicAssistantCommand({
+              command: `players/cmd/${command}`,
+              args: {
+                player_id: playerId,
+              },
+            }),
+          { playerId },
+        );
       } catch (error) {
         if (error instanceof MusicAssistantCommandError) {
-          setErrorMessage(error.message);
+          setActionErrorMessage(error.message);
         } else {
-          setErrorMessage("Unexpected error while executing player command.");
+          setActionErrorMessage("Unexpected error while executing player command.");
         }
       } finally {
         setActiveCommand(null);
       }
     },
-    [loadPlayers],
+    [],
   );
+
+  const handleManualRefresh = useCallback(async () => {
+    setActionErrorMessage(null);
+    try {
+      await refresh();
+    } catch (error) {
+      if (error instanceof MusicAssistantCommandError) {
+        setActionErrorMessage(error.message);
+      } else {
+        setActionErrorMessage("Unexpected error while loading players.");
+      }
+    }
+  }, [refresh]);
 
   const renderPlayersContent = () => {
     if (isLoading) {
@@ -198,7 +182,7 @@ export function PlayersList() {
           type="button"
           className="rounded-lg border border-foreground/15 px-3 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-50"
           disabled={isLoading || activeCommand !== null}
-          onClick={() => void loadPlayers()}
+          onClick={() => void handleManualRefresh()}
         >
           Refresh
         </button>
