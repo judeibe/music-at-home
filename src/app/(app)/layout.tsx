@@ -1,13 +1,17 @@
 import { AppNav } from "./_components/app-nav";
+import { getMusicAssistantSessionToken } from "@/lib/music-assistant/session";
 
 const APP_NAME = "Music at Home";
 const APP_SLUG = "music-at-home";
 
-export default function AppLayout({
+export default async function AppLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const sessionToken = await getMusicAssistantSessionToken();
+  const isAuthenticated = Boolean(sessionToken);
+
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col bg-background px-4 pb-28 pt-4 md:px-6 md:pb-8">
       <header className="mb-4 flex flex-col gap-1">
@@ -23,7 +27,7 @@ export default function AppLayout({
       </header>
       <div className="grid flex-1 gap-4 md:grid-cols-[260px_1fr]">
         <aside className="hidden rounded-3xl border border-foreground/10 bg-background p-3 md:block">
-          <AppNav />
+          <AppNav isAuthenticated={isAuthenticated} />
         </aside>
         <main className="flex flex-col gap-3">
           <section className="rounded-3xl border border-foreground/10 bg-background px-4 py-3">
@@ -35,7 +39,7 @@ export default function AppLayout({
           {children}
         </main>
       </div>
-      <AppNav />
+      <AppNav isAuthenticated={isAuthenticated} />
     </div>
   );
 }
