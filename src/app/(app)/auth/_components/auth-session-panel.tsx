@@ -15,6 +15,10 @@ type ErrorPayload = {
   };
 };
 
+async function readJson<T>(response: Response): Promise<T | null> {
+  return (await response.json().catch(() => null)) as T | null;
+}
+
 function readErrorMessage(payload: ErrorPayload | null, fallback: string): string {
   return payload?.error?.message ?? fallback;
 }
@@ -37,9 +41,7 @@ export function AuthSessionPanel({ initialIsAuthenticated }: AuthSessionPanelPro
       method: "GET",
       headers: { Accept: "application/json" },
     });
-    const payload = (await response.json().catch(() => null)) as
-      | { authenticated?: boolean }
-      | null;
+    const payload = await readJson<{ authenticated?: boolean }>(response);
 
     const authenticated = Boolean(payload?.authenticated);
     setIsAuthenticated(authenticated);
@@ -55,7 +57,7 @@ export function AuthSessionPanel({ initialIsAuthenticated }: AuthSessionPanelPro
     const requestBody = {
       username,
       password,
-      providerId: providerId.trim() || undefined,
+      providerId: providerId === "" ? undefined : providerId,
     };
 
     try {
@@ -68,19 +70,21 @@ export function AuthSessionPanel({ initialIsAuthenticated }: AuthSessionPanelPro
         body: JSON.stringify(requestBody),
       });
 
-      const payload = (await response.json().catch(() => null)) as ErrorPayload | null;
+      const payload = await readJson<ErrorPayload>(response);
       if (!response.ok) {
         setErrorMessage(readErrorMessage(payload, "Unable to sign in."));
-        setIsAuthenticated(false);
         return;
       }
 
       const authenticated = await refreshAuthState();
-      setStatusMessage(authenticated ? "Signed in successfully." : "Signed in, but no session found.");
+      setStatusMessage(
+        authenticated
+          ? "Signed in successfully."
+          : "Sign-in completed but session was not established. Please try again.",
+      );
       router.refresh();
     } catch {
       setErrorMessage("Network error while signing in.");
-      setIsAuthenticated(false);
     } finally {
       setPendingAction(null);
     }
@@ -97,14 +101,18 @@ export function AuthSessionPanel({ initialIsAuthenticated }: AuthSessionPanelPro
         headers: { Accept: "application/json" },
       });
 
-      const payload = (await response.json().catch(() => null)) as ErrorPayload | null;
+      const payload = await readJson<ErrorPayload>(response);
       if (!response.ok) {
         setErrorMessage(readErrorMessage(payload, "Unable to sign out."));
         return;
       }
 
       const authenticated = await refreshAuthState();
-      setStatusMessage(authenticated ? "Signed out request completed." : "Signed out successfully.");
+      setStatusMessage(
+        authenticated
+          ? "Sign-out request sent but session is still active. Please try again."
+          : "Signed out successfully.",
+      );
       router.refresh();
     } catch {
       setErrorMessage("Network error while signing out.");
@@ -135,6 +143,7 @@ export function AuthSessionPanel({ initialIsAuthenticated }: AuthSessionPanelPro
             value={username}
             onChange={(event) => setUsername(event.target.value)}
             required
+            autoComplete="username"
             disabled={isBusy}
             className="rounded-xl border border-foreground/20 bg-background px-3 py-2 text-sm outline-none transition focus:border-foreground/40 focus:ring-2 focus:ring-foreground/10 disabled:cursor-not-allowed disabled:opacity-60"
           />
@@ -148,6 +157,7 @@ export function AuthSessionPanel({ initialIsAuthenticated }: AuthSessionPanelPro
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             required
+            autoComplete="current-password"
             disabled={isBusy}
             className="rounded-xl border border-foreground/20 bg-background px-3 py-2 text-sm outline-none transition focus:border-foreground/40 focus:ring-2 focus:ring-foreground/10 disabled:cursor-not-allowed disabled:opacity-60"
           />
@@ -183,12 +193,16 @@ export function AuthSessionPanel({ initialIsAuthenticated }: AuthSessionPanelPro
         </div>
       </form>
 
-      <p aria-live="polite" className="min-h-6 text-sm text-foreground/70">
-        {statusMessage}
-      </p>
-      <p aria-live="assertive" className="min-h-6 text-sm text-red-600">
-        {errorMessage}
-      </p>
+      {statusMessage ? (
+        <p role="status" aria-live="polite" className="text-sm text-foreground/70">
+          {statusMessage}
+        </p>
+      ) : null}
+      {errorMessage ? (
+        <p role="alert" aria-live="assertive" className="text-sm text-red-600">
+          {errorMessage}
+        </p>
+      ) : null}
     </section>
   );
 }

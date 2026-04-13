@@ -1,5 +1,5 @@
 import { AppNav } from "./_components/app-nav";
-import { getMusicAssistantSessionToken } from "@/lib/music-assistant/session";
+import { getIsAuthenticatedFromSessionApi } from "./_lib/auth-session";
 
 const APP_NAME = "Music at Home";
 const APP_SLUG = "music-at-home";
@@ -9,8 +9,7 @@ export default async function AppLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const sessionToken = await getMusicAssistantSessionToken();
-  const isAuthenticated = Boolean(sessionToken);
+  const isAuthenticated = await getIsAuthenticatedFromSessionApi();
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col bg-background px-4 pb-28 pt-4 md:px-6 md:pb-8">

@@ -1,8 +1,8 @@
-import { getMusicAssistantSessionToken } from "@/lib/music-assistant/session";
+import { getIsAuthenticatedFromSessionApi } from "../_lib/auth-session";
 import { AuthSessionPanel } from "./_components/auth-session-panel";
 
 export default async function AuthPage() {
-  const sessionToken = await getMusicAssistantSessionToken();
+  const isAuthenticated = await getIsAuthenticatedFromSessionApi();
 
-  return <AuthSessionPanel initialIsAuthenticated={Boolean(sessionToken)} />;
+  return <AuthSessionPanel initialIsAuthenticated={isAuthenticated} />;
 }

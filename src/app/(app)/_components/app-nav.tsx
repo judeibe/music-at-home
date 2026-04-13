@@ -18,7 +18,11 @@ export function AppNav({ isAuthenticated = false }: AppNavProps) {
         aria-label="Primary navigation desktop"
         className="hidden flex-col gap-2 md:flex"
       >
-        <p className="px-3 text-xs uppercase tracking-[0.14em] text-foreground/60">
+        <p
+          role="status"
+          aria-live="polite"
+          className="px-3 text-xs uppercase tracking-[0.14em] text-foreground/60"
+        >
           Session: {authStatusLabel}
         </p>
         {appNavItems.map((item) => {
@@ -50,7 +54,11 @@ export function AppNav({ isAuthenticated = false }: AppNavProps) {
         aria-label="Primary navigation mobile"
         className="fixed inset-x-0 bottom-0 border-t border-foreground/10 bg-background/95 px-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] pt-2 backdrop-blur md:hidden"
       >
-        <p className="pb-2 text-center text-[10px] uppercase tracking-[0.16em] text-foreground/60">
+        <p
+          role="status"
+          aria-live="polite"
+          className="pb-2 text-center text-[10px] uppercase tracking-[0.16em] text-foreground/60"
+        >
           Session: {authStatusLabel}
         </p>
         <div className="mx-auto flex max-w-3xl items-center gap-1 overflow-x-auto">

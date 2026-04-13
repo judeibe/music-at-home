@@ -29,7 +29,7 @@ describe("AuthSessionPanel", () => {
 
   it("signs in successfully and updates session status", async () => {
     vi.mocked(fetch)
-      .mockResolvedValueOnce(makeJsonResponse({ success: true, user: { username: "admin" } }))
+      .mockResolvedValueOnce(makeJsonResponse({ success: true }))
       .mockResolvedValueOnce(makeJsonResponse({ success: true, authenticated: true }));
 
     render(<AuthSessionPanel initialIsAuthenticated={false} />);
@@ -40,6 +40,18 @@ describe("AuthSessionPanel", () => {
 
     await screen.findByText("Signed in successfully.");
     expect(screen.getByText("Signed in")).toBeInTheDocument();
+    expect(fetch).toHaveBeenNthCalledWith(
+      1,
+      "/api/music-assistant/auth/login",
+      expect.objectContaining({
+        method: "POST",
+      }),
+    );
+    const loginRequest = vi.mocked(fetch).mock.calls[0][1] as RequestInit;
+    expect(JSON.parse(loginRequest.body as string)).toEqual({
+      username: "admin",
+      password: "secret",
+    });
     expect(refresh).toHaveBeenCalledOnce();
   });
 
@@ -75,6 +87,13 @@ describe("AuthSessionPanel", () => {
     await waitFor(() => {
       expect(screen.getByText("Signed out")).toBeInTheDocument();
     });
+    expect(fetch).toHaveBeenNthCalledWith(
+      1,
+      "/api/music-assistant/auth/logout",
+      expect.objectContaining({
+        method: "POST",
+      }),
+    );
     expect(refresh).toHaveBeenCalledOnce();
   });
 });
